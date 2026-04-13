@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: accounting_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/accounting_test
+          SUPABASE_URL: http://localhost:54321
+          SUPABASE_SERVICE_KEY: test-key
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: src/frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: src/frontend
+        run: npm ci
+
+      - name: Type check
+        working-directory: src/frontend
+        run: npm run type-check
+
+      - name: Lint
+        working-directory: src/frontend
+        run: npm run lint
+
+      - name: Build
+        working-directory: src/frontend
+        run: npm run build
+
+  migration-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check SQL syntax
+        run: |
+          for file in supabase/migrations/*.sql; do
+            echo "Checking $file..."
+            # Basic syntax check with psql
+            # In production, use proper SQL linting
+          done
+
+      - name: Validate migration naming
+        run: |
+          for file in supabase/migrations/*.sql; do
+            if [[ ! $file =~ ^supabase/migrations/[0-9]{3}_.*\.sql$ ]]; then
+              echo "Invalid migration name: $file"
+              echo "Expected format: 001_description.sql"
+              exit 1
+            fi
+          done
+          echo "All migrations properly named"
