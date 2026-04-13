@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/dashboard", "destination": "/dashboard.html" },
+    { "source": "/upload", "destination": "/upload.html" },
+    { "source": "/export", "destination": "/export.html" },
+    { "source": "/", "destination": "/dashboard.html" }
+  ]
+}
