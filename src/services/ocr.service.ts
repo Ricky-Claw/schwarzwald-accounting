@@ -68,15 +68,16 @@ export async function extractAmazonDocumentData(
     const doc = result.documents[0];
     
     // Je nach Dokumenttyp unterschiedliche Extraktions-Logik
+    const pages = result.pages ?? [];
     switch (documentType) {
       case 'settlement_statement':
-        return extractSettlementStatement(doc, result.pages);
+        return extractSettlementStatement(doc, pages);
       case 'transaction_report':
-        return extractTransactionReport(doc, result.pages);
+        return extractTransactionReport(doc, pages);
       case 'payment_report':
-        return extractPaymentReport(doc, result.pages);
+        return extractPaymentReport(doc, pages);
       case 'fee_statement':
-        return extractFeeStatement(doc, result.pages);
+        return extractFeeStatement(doc, pages);
       default:
         return extractGenericAmazonDocument(doc, documentType);
     }
