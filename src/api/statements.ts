@@ -155,6 +155,35 @@ router.delete('/:id', async (req, res) => {
 });
 
 // ============================================
+// PATCH /api/accounting/statements/transactions/:id
+// Update transaction notes (for missing receipts)
+// ============================================
+router.patch('/transactions/:id', async (req, res) => {
+  try {
+    const userId = req.headers['x-user-id'] as string;
+    const { id } = req.params;
+    const { notes } = req.body;
+
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { data, error } = await supabase
+      .from('bank_transactions')
+      .update({ notes, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({ transaction: data });
+  } catch (error) {
+    console.error('Error updating transaction:', error);
+    res.status(500).json({ error: 'Failed to update transaction' });
+  }
+});
+
+// ============================================
 // PROCESSING FUNCTIONS
 // ============================================
 

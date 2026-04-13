@@ -11,6 +11,7 @@ import rateLimit from 'express-rate-limit';
 import statementsRouter from './api/statements.js';
 import amazonRouter from './api/amazon.js';
 import receiptsRouter from './api/receipts.js';
+import exportRouter from './api/export.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -74,11 +75,11 @@ app.get('/health', (req, res) => {
 app.use('/api/accounting/statements', statementsRouter);
 app.use('/api/accounting/amazon', amazonRouter);
 app.use('/api/accounting/receipts', receiptsRouter);
+app.use('/api/accounting/export', exportRouter);
 
 // TODO: Add more routes
 // app.use('/api/accounting/transactions', transactionsRouter);
 // app.use('/api/accounting/invoices', invoicesRouter);
-// app.use('/api/accounting/export', exportRouter);
 
 // ============================================
 // ERROR HANDLING
