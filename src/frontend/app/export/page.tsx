@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, AlertCircle, CheckCircle, FileText, MessageSquare, Calendar } from 'lucide-react';
 import Link from 'next/link';
@@ -27,6 +27,14 @@ interface ExportStatus {
 }
 
 export default function ExportPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">🌀 Laden...</div>}>
+      <ExportContent />
+    </Suspense>
+  );
+}
+
+function ExportContent() {
   const searchParams = useSearchParams();
   const preselectedYear = searchParams.get('year');
   const preselectedMonth = searchParams.get('month');
