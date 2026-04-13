@@ -1,8 +1,10 @@
 {
+  "cleanUrls": true,
+  "trailingSlash": false,
   "rewrites": [
-    { "source": "/dashboard", "destination": "/dashboard.html" },
-    { "source": "/upload", "destination": "/upload.html" },
-    { "source": "/export", "destination": "/export.html" },
-    { "source": "/", "destination": "/dashboard.html" }
+    { "source": "/", "destination": "/dashboard/index.html" },
+    { "source": "/dashboard", "destination": "/dashboard/index.html" },
+    { "source": "/upload", "destination": "/upload/index.html" },
+    { "source": "/export", "destination": "/export/index.html" }
   ]
 }
