@@ -1,11 +1,7 @@
 {
   "version": 2,
-  "name": "hernies-buchhaltung",
   "framework": "nextjs",
   "buildCommand": "cd src/frontend && npm run build",
   "outputDirectory": "src/frontend/dist",
-  "installCommand": "npm install && cd src/frontend && npm install",
-  "env": {
-    "NEXT_PUBLIC_API_URL": "@accounting_api_url"
-  }
+  "installCommand": "npm install && cd src/frontend && npm install"
 }
