@@ -6,7 +6,7 @@ import { Router } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import multer from 'multer';
 import { extractAmazonDocumentData } from '../services/ocr.service.js';
-import type { AmazonDocument, ProcessAmazonDocumentRequest } from '../types/index.js';
+import type { ProcessAmazonDocumentRequest } from '../types/index.js';
 
 const router = Router();
 

@@ -4,7 +4,7 @@
 // ============================================
 
 import { createClient } from '@supabase/supabase-js';
-import type { BankTransaction } from '../types/index.js';
+// BankTransaction type not currently used
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,

@@ -6,7 +6,7 @@ import { Router } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { parse } from 'csv-parse/sync';
 import { parseStringPromise } from 'xml2js';
-import type { BankStatement, BankTransaction, UploadStatementRequest } from '../types/index.js';
+import type { BankTransaction, UploadStatementRequest } from '../types/index.js';
 
 const router = Router();
 
