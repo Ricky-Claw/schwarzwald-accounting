@@ -10,7 +10,7 @@
     "start": "node dist/app.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/**/*.ts",
-    "test": "vitest",
+    "test": "vitest --passWithNoTests",
     "db:migrate": "supabase db push",
     "db:reset": "supabase db reset"
   },
