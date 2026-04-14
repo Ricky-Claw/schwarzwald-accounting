@@ -16,22 +16,25 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
       - name: Install dependencies
-        run: |
-          cd src/frontend
-          npm ci
+        working-directory: src/frontend
+        run: npm ci
+
+      - name: Pull Vercel Environment
+        working-directory: src/frontend
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build
-        run: |
-          cd src/frontend
-          npm run build
+        working-directory: src/frontend
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
         env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_API_URL: ${{ secrets.ACCOUNTING_API_URL }}
 
       - name: Deploy to Vercel
-        uses: vercel/action-deploy@v1
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: src/frontend
+        working-directory: src/frontend
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

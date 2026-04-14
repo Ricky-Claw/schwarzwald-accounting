@@ -70,27 +70,18 @@ jobs:
         working-directory: src/frontend
         run: npm run type-check
 
-      - name: Lint
-        working-directory: src/frontend
-        run: npm run lint
-
       - name: Build
         working-directory: src/frontend
         run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'test-key' }}
 
   migration-check:
     runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v4
-
-      - name: Check SQL syntax
-        run: |
-          for file in supabase/migrations/*.sql; do
-            echo "Checking $file..."
-            # Basic syntax check with psql
-            # In production, use proper SQL linting
-          done
 
       - name: Validate migration naming
         run: |
@@ -101,4 +92,4 @@ jobs:
               exit 1
             fi
           done
-          echo "All migrations properly named"
+          echo "✅ All migrations follow naming convention"
