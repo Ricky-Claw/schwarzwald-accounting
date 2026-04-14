@@ -54,7 +54,7 @@ function ExportContent() {
   async function fetchStatus() {
     setLoading(true);
     try {
-      const response = await fetch(`/api/accounting/export/status/${year}/${month}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounting/export/status/${year}/${month}`);
       const data = await response.json();
       setStatus(data);
     } catch (error) {
@@ -67,7 +67,7 @@ function ExportContent() {
   async function handleExport() {
     setDownloading(true);
     try {
-      const response = await fetch('/api/accounting/export', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounting/export`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

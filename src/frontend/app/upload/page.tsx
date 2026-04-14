@@ -70,7 +70,7 @@ export default function UploadPage() {
         );
       }, 200);
 
-      const response = await fetch('/api/accounting/receipts', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounting/receipts`, {
         method: 'POST',
         body: formData,
       });

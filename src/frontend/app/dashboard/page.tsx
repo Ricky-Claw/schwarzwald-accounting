@@ -43,8 +43,8 @@ export default function DashboardPage() {
   async function fetchDashboard() {
     try {
       const [monthsRes, statsRes] = await Promise.all([
-        fetch('/api/accounting/receipts/months/list'),
-        fetch('/api/accounting/receipts/dashboard/stats'),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounting/receipts/months/list`),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounting/receipts/dashboard/stats`),
       ]);
       
       const monthsData = await monthsRes.json();
