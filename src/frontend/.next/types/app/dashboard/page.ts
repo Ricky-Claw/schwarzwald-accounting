@@ -1,4 +1,4 @@
-// File: /tmp/schwarzwald-accounting/src/frontend/app/dashboard/page.tsx
+// File: /data/.openclaw/workspace/schwarzwald-accounting/src/frontend/app/dashboard/page.tsx
 import * as entry from '../../../../app/dashboard/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
