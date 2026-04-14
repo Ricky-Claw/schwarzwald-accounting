@@ -5,8 +5,8 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Hernies Buchhaltung',
-  description: 'Dein freundlicher Accounting-Helper',
+  title: 'Lanista Buchhaltung',
+  description: 'Professionelle Buchhaltung einfach gemacht',
 };
 
 export const viewport: Viewport = {

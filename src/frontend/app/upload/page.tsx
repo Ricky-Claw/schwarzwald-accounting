@@ -2,9 +2,8 @@
 
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, FileText, X, Check, Camera, File } from 'lucide-react';
+import { Upload, FileText, X, Check, ArrowLeft, Loader2, File } from 'lucide-react';
 import Link from 'next/link';
-import { Hernie } from '../components/Hernie';
 
 interface UploadingFile {
   id: string;
@@ -53,8 +52,6 @@ export default function UploadPage() {
     }));
 
     setFiles((prev) => [...prev, ...newFiles]);
-
-    // Upload each file
     newFiles.forEach((file) => uploadFile(file));
   };
 
@@ -63,7 +60,6 @@ export default function UploadPage() {
       const formData = new FormData();
       formData.append('file', fileObj.file);
 
-      // Simulate progress
       const progressInterval = setInterval(() => {
         setFiles((prev) =>
           prev.map((f) =>
@@ -121,168 +117,218 @@ export default function UploadPage() {
   const matchedCount = files.filter((f) => f.result?.matched).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50 p-6">
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <header className="max-w-4xl mx-auto mb-8">
-        <Link href="/dashboard" className="text-orange-600 hover:text-orange-800 mb-4 inline-block">
-          ← Zurück zum Dashboard
-        </Link>
-        <div className="flex items-center gap-4">
-          <h1 className="text-4xl font-bold text-orange-800">Belege hochladen</h1>
-          <Hernie
-            mood={allDone ? 'excited' : 'happy'}
-            message={
-              allDone
-                ? matchedCount > 0
-                  ? `${matchedCount} automatisch zugeordnet! 🎉`
-                  : 'Fertig! Ich ordne die Belege zu...'
-                : 'Lad deine Belege hoch! Ich erkenne alles automatisch ✨'
-            }
-          />
+      <header className="bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <Link href="/dashboard" className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-2">
+            <ArrowLeft className="w-4 h-4" />
+            Zurück zum Dashboard
+          </Link>
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-semibold text-slate-900">Dokumente hochladen</h1>
+            {files.length > 0 && (
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-slate-600">
+                  {matchedCount} von {files.length} zugeordnet
+                </span>
+                <div className="w-32 bg-slate-200 rounded-full h-2">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(matchedCount / files.length) * 100}%` }}
+                    className="h-full bg-emerald-500 rounded-full"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
-      {/* Upload Zone */}
-      <div className="max-w-4xl mx-auto">
-        <motion.div
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-          animate={{
-            scale: dragActive ? 1.02 : 1,
-            borderColor: dragActive ? '#f97316' : '#fed7aa',
-          }}
-          className={`relative bg-white/80 backdrop-blur rounded-3xl border-4 border-dashed p-12 text-center transition-colors ${
-            dragActive ? 'border-orange-500 bg-orange-50' : 'border-orange-200'
-          }`}
-        >
-          <input
-            type="file"
-            multiple
-            accept="image/*,.pdf"
-            onChange={(e) => e.target.files && handleFiles(e.target.files)}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-          />
-
-          <motion.div
-            animate={{ y: dragActive ? -10 : 0 }}
-            className="pointer-events-none"
-          >
-            <div className="w-24 h-24 bg-gradient-to-br from-orange-300 to-pink-300 rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-lg">
-              <Camera className="w-12 h-12 text-white" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">
-              Fotos hierher ziehen oder klicken
-            </h3>
-            <p className="text-gray-600">
-              Unterstützt: JPG, PNG, PDF • Max 10MB pro Datei
-            </p>
-          </motion.div>
-        </motion.div>
-
-        {/* File List */}
-        <AnimatePresence>
-          {files.length > 0 && (
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Upload Zone */}
+          <div>
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-8 space-y-3"
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              animate={{ scale: dragActive ? 1.01 : 1 }}
+              className={`relative bg-white rounded-xl border-2 border-dashed p-12 text-center transition-colors ${
+                dragActive ? 'border-emerald-500 bg-emerald-50' : 'border-slate-300'
+              }`}
             >
-              <h3 className="font-bold text-gray-800 mb-4">Hochgeladene Belege</h3>
+              <input
+                type="file"
+                multiple
+                accept="image/*,.pdf"
+                onChange={(e) => e.target.files && handleFiles(e.target.files)}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
 
-              {files.map((file) => (
-                <motion.div
-                  key={file.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  className="bg-white rounded-2xl p-4 shadow-md border-2 border-gray-100 flex items-center gap-4"
-                >
-                  {/* Icon */}
-                  <div
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                      file.status === 'matched'
-                        ? 'bg-green-100'
-                        : file.status === 'error'
-                        ? 'bg-red-100'
-                        : 'bg-orange-100'
-                    }`}
-                  >
-                    {file.status === 'matched' ? (
-                      <Check className="w-6 h-6 text-green-600" />
-                    ) : file.status === 'error' ? (
-                      <X className="w-6 h-6 text-red-600" />
-                    ) : (
-                      <FileText className="w-6 h-6 text-orange-600" />
-                    )}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-800 truncate">
-                      {file.file.name}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {(file.file.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-
-                    {/* Result */}
-                    {file.result && (
-                      <div className="mt-1 text-sm">
-                        {file.result.merchant && (
-                          <span className="text-purple-600">{file.result.merchant} • </span>
-                        )}
-                        {file.result.amount && (
-                          <span className="text-gray-700">{file.result.amount.toFixed(2)} €</span>
-                        )}
-                        {file.result.matched && (
-                          <span className="ml-2 text-green-600 font-medium">✓ Zugeordnet</span>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Progress */}
-                    {file.status === 'uploading' && (
-                      <div className="mt-2 bg-gray-100 rounded-full h-2 overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${file.progress}%` }}
-                          className="h-full bg-gradient-to-r from-orange-400 to-pink-400"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Remove */}
-                  <button
-                    onClick={() => removeFile(file.id)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <X className="w-5 h-5 text-gray-400" />
-                  </button>
-                </motion.div>
-              ))}
+              <motion.div animate={{ y: dragActive ? -5 : 0 }} className="pointer-events-none">
+                <div className="w-16 h-16 bg-emerald-100 rounded-xl mx-auto mb-4 flex items-center justify-center">
+                  <Upload className="w-8 h-8 text-emerald-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                  Dateien hierher ziehen
+                </h3>
+                <p className="text-slate-500 text-sm mb-4">
+                  oder klicken zum Durchsuchen
+                </p>
+                <p className="text-slate-400 text-xs">
+                  JPG, PNG, PDF • Max 10MB
+                </p>
+              </motion.div>
             </motion.div>
-          )}
-        </AnimatePresence>
 
-        {/* Tips */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="mt-8 bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl p-6 border-2 border-purple-200"
-        >
-          <h4 className="font-bold text-purple-800 mb-2">💡 Hernies Tipps</h4>
-          <ul className="text-purple-700 space-y-1 text-sm">
-            <li>• Achte auf gute Beleuchtung beim Fotografieren</li>
-            <li>• Der gesamte Beleg sollte sichtbar sein</li>
-            <li>• Ich erkenne Datum und Betrag automatisch!</li>
-            <li>• PDFs von E-Mail ebenfalls möglich</li>
-          </ul>
-        </motion.div>
-      </div>
+            {/* Info Box */}
+            <div className="mt-6 bg-slate-100 rounded-xl p-5">
+              <h4 className="font-medium text-slate-900 mb-3">Unterstützte Dokumente</h4>
+              <ul className="space-y-2 text-sm text-slate-600">
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600" />
+                  Rechnungen & Belege
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600" />
+                  Kontoauszüge (PDF)
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600" />
+                  Quittungen & Zahlungsbelege
+                </li>
+              </ul>
+              <p className="mt-4 text-xs text-slate-500">
+                Die OCR erkennt automatisch ob es sich um einen Beleg oder Kontoauszug handelt.
+              </p>
+            </div>
+          </div>
+
+          {/* File List */}
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 mb-4">Hochgeladene Dateien</h2>
+            
+            <AnimatePresence>
+              {files.length === 0 ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="bg-white rounded-xl p-8 text-center border border-slate-200"
+                >
+                  <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-500">Noch keine Dateien hochgeladen</p>
+                </motion.div>
+              ) : (
+                <div className="space-y-3">
+                  {files.map((file) => (
+                    <motion.div
+                      key={file.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      className="bg-white rounded-lg p-4 border border-slate-200 shadow-sm"
+                    >
+                      <div className="flex items-start gap-4">
+                        {/* Status Icon */}
+                        <div
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                            file.status === 'matched'
+                              ? 'bg-emerald-100'
+                              : file.status === 'error'
+                              ? 'bg-red-100'
+                              : file.status === 'uploading'
+                              ? 'bg-slate-100'
+                              : 'bg-amber-100'
+                          }`}
+                        >
+                          {file.status === 'matched' ? (
+                            <Check className="w-5 h-5 text-emerald-600" />
+                          ) : file.status === 'error' ? (
+                            <X className="w-5 h-5 text-red-600" />
+                          ) : file.status === 'uploading' ? (
+                            <Loader2 className="w-5 h-5 text-slate-600 animate-spin" />
+                          ) : (
+                            <File className="w-5 h-5 text-amber-600" />
+                          )}
+                        </div>
+
+                        {/* File Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-slate-900 truncate">{file.file.name}</p>
+                          <p className="text-sm text-slate-500">
+                            {(file.file.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+
+                          {/* Progress Bar */}
+                          {file.status === 'uploading' && (
+                            <div className="mt-2 bg-slate-100 rounded-full h-1.5">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${file.progress}%` }}
+                                className="h-full bg-emerald-500 rounded-full"
+                              />
+                            </div>
+                          )}
+
+                          {/* Result */}
+                          {file.result && (
+                            <div className="mt-2 flex items-center gap-2 text-sm">
+                              {file.result.merchant && (
+                                <span className="text-slate-700">{file.result.merchant}</span>
+                              )}
+                              {file.result.amount && (
+                                <span className="text-slate-900 font-medium">
+                                  {file.result.amount.toFixed(2)} €
+                                </span>
+                              )}
+                              {file.result.matched && (
+                                <span className="inline-flex items-center gap-1 text-emerald-600 text-xs bg-emerald-50 px-2 py-0.5 rounded-full">
+                                  <Check className="w-3 h-3" />
+                                  Zugeordnet
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {file.error && (
+                            <p className="mt-1 text-sm text-red-600">{file.error}</p>
+                          )}
+                        </div>
+
+                        {/* Remove Button */}
+                        <button
+                          onClick={() => removeFile(file.id)}
+                          className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                        >
+                          <X className="w-4 h-4 text-slate-400" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </AnimatePresence>
+
+            {/* Summary */}
+            {allDone && files.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-6 p-4 bg-emerald-50 rounded-lg border border-emerald-200"
+              >
+                <div className="flex items-center gap-3">
+                  <Check className="w-5 h-5 text-emerald-600" />
+                  <span className="text-emerald-800 font-medium">
+                    {matchedCount} von {files.length} Dateien automatisch zugeordnet
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
