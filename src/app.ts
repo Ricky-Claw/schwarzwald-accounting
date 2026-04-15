@@ -48,10 +48,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
   // In production, verify JWT from Supabase Auth
   // For now, x-user-id header from frontend
-  const userId = req.headers['x-user-id'];
+  let userId = req.headers['x-user-id'] as string | undefined;
   
+  // TEMP: Fallback für Test-Zwecke
   if (!userId && req.path !== '/health') {
-    return res.status(401).json({ error: 'Unauthorized' });
+    console.warn('No x-user-id header, using test user');
+    userId = '00000000-0000-0000-0000-000000000001';
+    req.headers['x-user-id'] = userId;
   }
   
   next();

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, FileText, X, Check, ArrowLeft, Loader2, File } from 'lucide-react';
 import Link from 'next/link';
+import { createClient } from '@supabase/supabase-js';
 
 interface UploadingFile {
   id: string;
@@ -19,9 +20,25 @@ interface UploadingFile {
   error?: string;
 }
 
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
 export default function UploadPage() {
   const [files, setFiles] = useState<UploadingFile[]>([]);
   const [dragActive, setDragActive] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        setUserId(session.user.id);
+      }
+    };
+    getUser();
+  }, []);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -57,6 +74,17 @@ export default function UploadPage() {
 
   const uploadFile = async (fileObj: UploadingFile) => {
     try {
+      if (!userId) {
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileObj.id
+              ? { ...f, status: 'error', error: 'Nicht eingeloggt' }
+              : f
+          )
+        );
+        return;
+      }
+
       const formData = new FormData();
       formData.append('file', fileObj.file);
 
@@ -72,6 +100,9 @@ export default function UploadPage() {
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounting/receipts`, {
         method: 'POST',
+        headers: {
+          'x-user-id': userId,
+        },
         body: formData,
       });
 
