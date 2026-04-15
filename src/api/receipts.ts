@@ -7,6 +7,7 @@ import { Router } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import multer from 'multer';
 import { extractReceiptData } from '../services/ocr.service.js';
+import { extractReceiptDataWithKimi, isKimiOCRAvailable } from '../services/ocr-kimi.service.js';
 import {
   findMatchingTransaction,
   matchReceiptToTransaction,
@@ -120,8 +121,23 @@ router.post('/', upload.single('file'), async (req, res) => {
 
     if (uploadError) throw uploadError;
 
-    // OCR processing
-    const ocrResult = await extractReceiptData(req.file.buffer);
+    // OCR processing - Kimi Vision bevorzugt, dann Azure Fallback
+    let ocrResult;
+    
+    if (isKimiOCRAvailable()) {
+      console.log('Using Kimi Vision for OCR...');
+      ocrResult = await extractReceiptDataWithKimi(req.file.buffer, req.file.mimetype);
+    } else if (process.env.AZURE_FORM_RECOGNIZER_KEY) {
+      console.log('Using Azure OCR...');
+      ocrResult = await extractReceiptData(req.file.buffer);
+    } else {
+      console.log('No OCR service available, using manual mode');
+      ocrResult = {
+        success: false,
+        confidence: 0,
+        error: 'OCR nicht verfügbar - manuelle Eingabe erforderlich'
+      };
+    }
 
     // Try auto-matching
     let matchedTransactionId: string | null = null;

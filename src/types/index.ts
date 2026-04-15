@@ -200,6 +200,10 @@ export interface OCRResult {
   date?: string;
   total_amount?: number;
   vat_amount?: number;
+  vat_rate?: number;
+  currency?: string;
+  receipt_number?: string;
+  payment_method?: string;
   items?: OCRItem[];
   confidence: number;
   raw?: Record<string, unknown>;

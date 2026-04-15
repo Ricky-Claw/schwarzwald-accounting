@@ -1,22 +1,49 @@
 // ============================================
-// OCR SERVICE - Azure Form Recognizer
+// OCR SERVICE - Optional Azure Form Recognizer
 // Unterstützt: Quittungen, Rechnungen, Amazon Seller Central
 // ============================================
 
-import { DocumentAnalysisClient, AzureKeyCredential } from '@azure/ai-form-recognizer';
 import type { OCRResult, AmazonOCRResult, AmazonDocumentType, AmazonTransaction } from '../types/index.js';
 
-const client = new DocumentAnalysisClient(
-  process.env.AZURE_FORM_RECOGNIZER_ENDPOINT!,
-  new AzureKeyCredential(process.env.AZURE_FORM_RECOGNIZER_KEY!)
-);
+// Azure Client nur initialisieren wenn Keys vorhanden
+let client: any = null;
+
+function getAzureClient() {
+  if (client) return client;
+  
+  const endpoint = process.env.AZURE_FORM_RECOGNIZER_ENDPOINT;
+  const key = process.env.AZURE_FORM_RECOGNIZER_KEY;
+  
+  if (!endpoint || !key) {
+    return null;
+  }
+  
+  try {
+    const { DocumentAnalysisClient, AzureKeyCredential } = require('@azure/ai-form-recognizer');
+    client = new DocumentAnalysisClient(endpoint, new AzureKeyCredential(key));
+    return client;
+  } catch (error) {
+    console.warn('Azure Form Recognizer not available:', error);
+    return null;
+  }
+}
 
 /**
  * Extrahiert Daten aus einer Quittung/Rechnung
  */
 export async function extractReceiptData(fileBuffer: Buffer): Promise<OCRResult> {
+  const azureClient = getAzureClient();
+  
+  if (!azureClient) {
+    return { 
+      success: false, 
+      confidence: 0, 
+      error: 'OCR nicht verfügbar - manuelle Eingabe erforderlich' 
+    };
+  }
+  
   try {
-    const poller = await client.beginAnalyzeDocument('prebuilt-receipt', fileBuffer);
+    const poller = await azureClient.beginAnalyzeDocument('prebuilt-receipt', fileBuffer);
     const result = await poller.pollUntilDone();
 
     if (!result.documents || result.documents.length === 0) {

@@ -6,6 +6,7 @@ import { Router } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import multer from 'multer';
 import { extractAmazonDocumentData } from '../services/ocr.service.js';
+import { extractAmazonDocumentWithKimi, isKimiOCRAvailable } from '../services/ocr-kimi.service.js';
 import type { ProcessAmazonDocumentRequest } from '../types/index.js';
 
 const router = Router();
@@ -302,8 +303,17 @@ async function processAmazonDocumentAsync(
       .update({ status: 'processing' })
       .eq('id', documentId);
 
-    // Extract data using OCR
-    const result = await extractAmazonDocumentData(fileBuffer, documentType as any);
+    // Extract data using OCR - Kimi bevorzugt
+    let result;
+    if (isKimiOCRAvailable()) {
+      console.log(`Processing Amazon ${documentType} with Kimi Vision...`);
+      result = await extractAmazonDocumentWithKimi(fileBuffer, 'image/png', documentType as any);
+    } else if (process.env.AZURE_FORM_RECOGNIZER_KEY) {
+      console.log(`Processing Amazon ${documentType} with Azure...`);
+      result = await extractAmazonDocumentData(fileBuffer, documentType as any);
+    } else {
+      throw new Error('Kein OCR-Service verfügbar');
+    }
 
     if (!result.success) {
       await supabase
