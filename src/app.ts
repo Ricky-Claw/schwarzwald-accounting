@@ -12,6 +12,7 @@ import statementsRouter from './api/statements.js';
 import amazonRouter from './api/amazon.js';
 import receiptsRouter from './api/receipts.js';
 import exportRouter from './api/export.js';
+import authRouter, { authMiddleware } from './api/auth.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -45,20 +46,7 @@ app.use(express.urlencoded({ extended: true }));
 // ============================================
 // AUTH MIDDLEWARE
 // ============================================
-app.use((req, res, next) => {
-  // In production, verify JWT from Supabase Auth
-  // For now, x-user-id header from frontend
-  let userId = req.headers['x-user-id'] as string | undefined;
-  
-  // TEMP: Fallback für Test-Zwecke
-  if (!userId && req.path !== '/health') {
-    console.warn('No x-user-id header, using test user');
-    userId = '00000000-0000-0000-0000-000000000001';
-    req.headers['x-user-id'] = userId;
-  }
-  
-  next();
-});
+app.use(authMiddleware);
 
 // ============================================
 // ROUTES
@@ -75,6 +63,7 @@ app.get('/health', (req, res) => {
 });
 
 // API routes
+app.use('/api/auth', authRouter);
 app.use('/api/accounting/statements', statementsRouter);
 app.use('/api/accounting/amazon', amazonRouter);
 app.use('/api/accounting/receipts', receiptsRouter);
