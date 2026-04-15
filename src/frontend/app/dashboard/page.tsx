@@ -50,7 +50,8 @@ export default function DashboardPage() {
   async function fetchDashboard() {
     try {
       const token = localStorage.getItem('token');
-      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
       
       const [monthsRes, statsRes] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounting/receipts/months/list`, { headers }),
