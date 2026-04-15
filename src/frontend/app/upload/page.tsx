@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, FileText, X, Check, ArrowLeft, Loader2, File } from 'lucide-react';
 import Link from 'next/link';
@@ -22,6 +23,14 @@ interface UploadingFile {
 export default function UploadPage() {
   const [files, setFiles] = useState<UploadingFile[]>([]);
   const [dragActive, setDragActive] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+    }
+  }, [router]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();

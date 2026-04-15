@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
   Upload, Download, CheckCircle, AlertCircle, 
@@ -35,16 +36,25 @@ export default function DashboardPage() {
   const [months, setMonths] = useState<MonthStatus[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
     fetchDashboard();
-  }, []);
+  }, [router]);
 
   async function fetchDashboard() {
     try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      
       const [monthsRes, statsRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounting/receipts/months/list`),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounting/receipts/dashboard/stats`),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounting/receipts/months/list`, { headers }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounting/receipts/dashboard/stats`, { headers }),
       ]);
       
       const monthsData = await monthsRes.json();
