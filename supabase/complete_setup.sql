@@ -230,57 +230,68 @@ ALTER TABLE accounting_exports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE amazon_documents ENABLE ROW LEVEL SECURITY;
 
 -- Categories
-CREATE POLICY IF NOT EXISTS "accounting_own_data" ON transaction_categories
+DROP POLICY IF EXISTS "accounting_own_data" ON transaction_categories;
+CREATE POLICY "accounting_own_data" ON transaction_categories
     FOR ALL TO authenticated USING (user_id = auth.uid() OR is_system = true);
 
 -- Bank Statements
-CREATE POLICY IF NOT EXISTS "accounting_own_data" ON bank_statements
+DROP POLICY IF EXISTS "accounting_own_data" ON bank_statements;
+CREATE POLICY "accounting_own_data" ON bank_statements
     FOR ALL TO authenticated USING (user_id = auth.uid());
 
 -- Bank Transactions
-CREATE POLICY IF NOT EXISTS "accounting_own_data" ON bank_transactions
+DROP POLICY IF EXISTS "accounting_own_data" ON bank_transactions;
+CREATE POLICY "accounting_own_data" ON bank_transactions
     FOR ALL TO authenticated USING (user_id = auth.uid());
 
 -- Invoices
-CREATE POLICY IF NOT EXISTS "accounting_own_data" ON invoices
+DROP POLICY IF EXISTS "accounting_own_data" ON invoices;
+CREATE POLICY "accounting_own_data" ON invoices
     FOR ALL TO authenticated USING (user_id = auth.uid());
 
 -- Receipts
-CREATE POLICY IF NOT EXISTS "accounting_own_data" ON receipts
+DROP POLICY IF EXISTS "accounting_own_data" ON receipts;
+CREATE POLICY "accounting_own_data" ON receipts
     FOR ALL TO authenticated USING (user_id = auth.uid());
 
 -- Transaction Splits
-CREATE POLICY IF NOT EXISTS "accounting_own_data" ON transaction_splits
+DROP POLICY IF EXISTS "accounting_own_data" ON transaction_splits;
+CREATE POLICY "accounting_own_data" ON transaction_splits
     FOR ALL TO authenticated USING (transaction_id IN (
         SELECT id FROM bank_transactions WHERE user_id = auth.uid()
     ));
 
 -- Exports
-CREATE POLICY IF NOT EXISTS "accounting_own_data" ON accounting_exports
+DROP POLICY IF EXISTS "accounting_own_data" ON accounting_exports;
+CREATE POLICY "accounting_own_data" ON accounting_exports
     FOR ALL TO authenticated USING (user_id = auth.uid());
 
 -- Amazon Documents
-CREATE POLICY IF NOT EXISTS "amazon_documents_own_data" ON amazon_documents
+DROP POLICY IF EXISTS "amazon_documents_own_data" ON amazon_documents;
+CREATE POLICY "amazon_documents_own_data" ON amazon_documents
     FOR ALL TO authenticated USING (user_id = auth.uid());
 
 -- ============================================
 -- RLS POLICIES - Storage
 -- ============================================
-CREATE POLICY IF NOT EXISTS "Users can upload own documents" ON storage.objects
+DROP POLICY IF EXISTS "Users can upload own documents" ON storage.objects;
+CREATE POLICY "Users can upload own documents" ON storage.objects
     FOR INSERT TO authenticated
     WITH CHECK (
         bucket_id = 'accounting-documents' 
         AND auth.uid() = owner
     );
 
-CREATE POLICY IF NOT EXISTS "Users can view own documents" ON storage.objects
+DROP POLICY IF EXISTS "Users can view own documents" ON storage.objects;
+CREATE POLICY "Users can view own documents" ON storage.objects
     FOR SELECT TO authenticated
     USING (
         bucket_id = 'accounting-documents' 
         AND auth.uid() = owner
     );
 
-CREATE POLICY IF NOT EXISTS "Users can delete own documents" ON storage.objects
+DROP POLICY IF EXISTS "Users can delete own documents" ON storage.objects;
+CREATE POLICY "Users can delete own documents" ON storage.objects
     FOR DELETE TO authenticated
     USING (
         bucket_id = 'accounting-documents' 
@@ -305,23 +316,28 @@ CREATE INDEX IF NOT EXISTS idx_amazon_docs_status ON amazon_documents(status);
 -- ============================================
 -- TRIGGERS
 -- ============================================
-CREATE TRIGGER IF NOT EXISTS update_transaction_categories_updated_at 
+DROP TRIGGER IF EXISTS update_transaction_categories_updated_at ON transaction_categories;
+CREATE TRIGGER update_transaction_categories_updated_at
     BEFORE UPDATE ON transaction_categories
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER IF NOT EXISTS update_bank_transactions_updated_at 
+DROP TRIGGER IF EXISTS update_bank_transactions_updated_at ON bank_transactions;
+CREATE TRIGGER update_bank_transactions_updated_at
     BEFORE UPDATE ON bank_transactions
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER IF NOT EXISTS update_invoices_updated_at 
+DROP TRIGGER IF EXISTS update_invoices_updated_at ON invoices;
+CREATE TRIGGER update_invoices_updated_at
     BEFORE UPDATE ON invoices
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER IF NOT EXISTS update_receipts_updated_at 
+DROP TRIGGER IF EXISTS update_receipts_updated_at ON receipts;
+CREATE TRIGGER update_receipts_updated_at
     BEFORE UPDATE ON receipts
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER IF NOT EXISTS update_amazon_docs_updated_at 
+DROP TRIGGER IF EXISTS update_amazon_docs_updated_at ON amazon_documents;
+CREATE TRIGGER update_amazon_docs_updated_at
     BEFORE UPDATE ON amazon_documents
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
