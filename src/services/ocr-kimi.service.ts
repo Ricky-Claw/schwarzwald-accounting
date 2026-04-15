@@ -21,6 +21,15 @@ export function isKimiOCRAvailable(): boolean {
 }
 
 /**
+ * Konvertiert PDF zu Base64 Data URL für Kimi
+ * Kimi unterstützt PDFs direkt als base64
+ */
+function createDataUrl(buffer: Buffer, mimeType: string): string {
+  const base64 = buffer.toString('base64');
+  return `data:${mimeType};base64,${base64}`;
+}
+
+/**
  * Extrahiert Daten aus Beleg mit Kimi Vision
  */
 export async function extractReceiptDataWithKimi(
@@ -36,9 +45,11 @@ export async function extractReceiptDataWithKimi(
   }
 
   try {
-    // Bild als Base64
-    const base64Image = fileBuffer.toString('base64');
-    const dataUrl = `data:${mimeType};base64,${base64Image}`;
+    // Prüfe ob PDF oder Bild
+    const isPdf = mimeType === 'application/pdf';
+    const dataUrl = createDataUrl(fileBuffer, mimeType);
+    
+    const fileTypeDescription = isPdf ? 'PDF-Rechnung' : 'Beleg';
 
     const messages: KimiMessage[] = [
       {
@@ -54,7 +65,7 @@ export async function extractReceiptDataWithKimi(
           },
           {
             type: 'text',
-            text: `Analysiere diesen Beleg und extrahiere folgende Daten im JSON-Format:
+            text: `Analysiere diese ${fileTypeDescription} und extrahiere folgende Daten im JSON-Format:
 {
   "merchant_name": "Name des Händlers/Ladens",
   "date": "Datum im Format YYYY-MM-DD",
@@ -62,8 +73,9 @@ export async function extractReceiptDataWithKimi(
   "vat_amount": MwSt-Betrag als Zahl (wenn erkennbar),
   "vat_rate": MwSt-Satz als Zahl z.B. 19 (wenn erkennbar),
   "currency": "Währung z.B. EUR",
-  "receipt_number": "Belegnummer/Rechnungsnummer",
-  "payment_method": "Zahlungsmethode wenn erkennbar"
+  "receipt_number": "Belegnummer/Rechnungsnummer/Rechnungsnummer",
+  "payment_method": "Zahlungsmethode wenn erkennbar",
+  "invoice_type": "incoming oder outgoing (nur bei Rechnungen)"
 }
 
 Gib NUR das JSON zurück, ohne Erklärungen.`

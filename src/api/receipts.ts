@@ -110,6 +110,14 @@ router.post('/', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
+    // Validiere Dateityp (Bilder und PDFs)
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!allowedTypes.includes(req.file.mimetype)) {
+      return res.status(400).json({ 
+        error: 'Invalid file type. Allowed: JPG, PNG, WebP, PDF' 
+      });
+    }
+
     // Upload to storage
     const fileName = `receipts/${userId}/${Date.now()}_${req.file.originalname}`;
     const { data: uploadData, error: uploadError } = await supabase
