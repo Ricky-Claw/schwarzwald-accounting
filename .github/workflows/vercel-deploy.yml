@@ -23,9 +23,11 @@ jobs:
         working-directory: src/frontend
         run: npm ci
 
-      - name: Pull Vercel Environment
+      - name: Link Vercel Project
         working-directory: src/frontend
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        run: |
+          vercel link --yes --project=prj_LZYn40brnOLTfIBFyHmiwFPyJuWA --token=${{ secrets.VERCEL_TOKEN }}
+          vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build
         working-directory: src/frontend
