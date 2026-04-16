@@ -26,7 +26,7 @@ jobs:
       - name: Link Vercel Project
         working-directory: src/frontend
         run: |
-          vercel link --yes --project=prj_LZYn40brnOLTfIBFyHmiwFPyJuWA --token=${{ secrets.VERCEL_TOKEN }}
+          vercel link --yes --project=prj_d2Ejolv94NxX1e4L5JJESJKHA5AP --token=${{ secrets.VERCEL_TOKEN }}
           vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build
