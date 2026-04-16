@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { 
   Upload, Download, CheckCircle, AlertCircle, 
   Calendar, Receipt, TrendingUp, FileText,
-  ChevronRight
+  ChevronRight, LogOut
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -39,8 +39,8 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+    const apiKey = localStorage.getItem('apiKey');
+    if (!apiKey) {
       router.push('/login');
       return;
     }
@@ -49,9 +49,8 @@ export default function DashboardPage() {
 
   async function fetchDashboard() {
     try {
-      const token = localStorage.getItem('token');
-      const headers: Record<string, string> = {};
-      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const apiKey = localStorage.getItem('apiKey') || process.env.NEXT_PUBLIC_API_KEY || 'lanista-secret-key-2024';
+      const headers: Record<string, string> = { 'x-api-key': apiKey };
       
       const [monthsRes, statsRes] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounting/receipts/months/list`, { headers }),
@@ -100,6 +99,16 @@ export default function DashboardPage() {
               <CheckCircle className="w-5 h-5" />
               <span className="text-sm font-medium">System aktiv</span>
             </div>
+            <button
+              onClick={() => {
+                localStorage.removeItem('apiKey');
+                router.push('/login');
+              }}
+              className="flex items-center gap-2 text-slate-500 hover:text-red-600 px-4 py-2 rounded-lg hover:bg-red-50 transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="text-sm font-medium">Abmelden</span>
+            </button>
           </div>
         </div>
       </header>

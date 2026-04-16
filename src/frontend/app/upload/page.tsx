@@ -26,8 +26,8 @@ export default function UploadPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+    const apiKey = localStorage.getItem('apiKey');
+    if (!apiKey) {
       router.push('/login');
     }
   }, [router]);
@@ -66,17 +66,10 @@ export default function UploadPage() {
 
   const uploadFile = async (fileObj: UploadingFile) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.id === fileObj.id
-              ? { ...f, status: 'error', error: 'Nicht eingeloggt' }
-              : f
-          )
-        );
-        return;
-      }
+      const apiKey = localStorage.getItem('apiKey') || process.env.NEXT_PUBLIC_API_KEY || 'lanista-secret-key-2024';
+      
+      const formData = new FormData();
+      formData.append('file', fileObj.file);
 
       const formData = new FormData();
       formData.append('file', fileObj.file);
@@ -94,7 +87,7 @@ export default function UploadPage() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounting/receipts`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'x-api-key': apiKey,
         },
         body: formData,
       });

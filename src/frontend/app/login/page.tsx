@@ -3,11 +3,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Lock, User, ArrowRight } from 'lucide-react';
+import { Lock, ArrowRight } from 'lucide-react';
+
+const API_KEY = 'lanista-secret-key-2024';
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [passcode, setPasscode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -17,27 +18,15 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Login fehlgeschlagen');
-      }
-
-      const data = await response.json();
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('userId', data.userId);
-      
+    // Simple passcode check
+    if (passcode === 'lanista2024') {
+      localStorage.setItem('apiKey', API_KEY);
       router.push('/dashboard');
-    } catch (err) {
-      setError('Benutzername oder Passwort falsch');
-    } finally {
-      setLoading(false);
+    } else {
+      setError('Falsches Passwort');
     }
+    
+    setLoading(false);
   };
 
   return (
@@ -52,27 +41,10 @@ export default function LoginPage() {
             <Lock className="w-8 h-8 text-emerald-600" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900">Lanista Buchhaltung</h1>
-          <p className="text-slate-500 mt-2">Bitte einloggen</p>
+          <p className="text-slate-500 mt-2">Passwort eingeben</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Benutzername
-            </label>
-            <div className="relative">
-              <User className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                placeholder="Benutzername"
-                required
-              />
-            </div>
-          </div>
-
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Passwort
@@ -81,8 +53,8 @@ export default function LoginPage() {
               <Lock className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
               <input
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={passcode}
+                onChange={(e) => setPasscode(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 placeholder="Passwort"
                 required
