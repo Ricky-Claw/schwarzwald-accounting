@@ -88,6 +88,10 @@ export interface Receipt {
   bank_transaction_id?: string;
   invoice_id?: string;
   file_path: string;
+  file_name_display?: string;
+  invoice_number?: string;
+  invoice_type?: 'incoming' | 'outgoing';
+  skr04_code?: string;
   ocr_confidence?: number;
   ocr_raw?: Record<string, unknown>;
   ocr_status: 'pending' | 'processing' | 'success' | 'error';
@@ -203,6 +207,7 @@ export interface OCRResult {
   vat_rate?: number;
   currency?: string;
   receipt_number?: string;
+  invoice_number?: string;
   payment_method?: string;
   items?: OCRItem[];
   confidence: number;

@@ -8,6 +8,7 @@ import { createClient } from '@supabase/supabase-js';
 import multer from 'multer';
 import { extractReceiptData } from '../services/ocr.service.js';
 import { extractReceiptDataWithKimi, isKimiOCRAvailable } from '../services/ocr-kimi.service.js';
+import { EXPENSE_CATEGORIES, autoCategorize, generateFileName } from '../types/categories.js';
 import {
   findMatchingTransaction,
   matchReceiptToTransaction,
@@ -99,7 +100,7 @@ router.get('/:id', async (req, res) => {
 
 // ============================================
 // POST /api/accounting/receipts
-// Upload + OCR + Automatisches Matching
+// Upload + OCR + Automatisches Matching + Kategorisierung
 // ============================================
 router.post('/', upload.single('file'), async (req, res) => {
   try {
@@ -118,16 +119,9 @@ router.post('/', upload.single('file'), async (req, res) => {
       });
     }
 
-    // Upload to storage
-    const fileName = `receipts/${userId}/${Date.now()}_${req.file.originalname}`;
-    const { data: uploadData, error: uploadError } = await supabase
-      .storage
-      .from('accounting-documents')
-      .upload(fileName, req.file.buffer, {
-        contentType: req.file.mimetype,
-      });
-
-    if (uploadError) throw uploadError;
+    // Rechnungstyp aus Request (incoming=Ausgabe, outgoing=Einnahme)
+    const invoiceType = req.body.invoice_type === 'outgoing' ? 'outgoing' : 'incoming';
+    const manualCategory = req.body.category_id as string | undefined;
 
     // OCR processing - Kimi Vision bevorzugt, dann Azure Fallback
     let ocrResult;
@@ -147,11 +141,36 @@ router.post('/', upload.single('file'), async (req, res) => {
       };
     }
 
-    // Try auto-matching
+    // Automatische Kategorisierung
+    const category = manualCategory 
+      ? EXPENSE_CATEGORIES.find(c => c.id === manualCategory)
+      : (ocrResult.merchant_name ? autoCategorize(ocrResult.merchant_name) : EXPENSE_CATEGORIES.find(c => c.id === 'sonstiges'));
+
+    // Generiere sinnvollen Dateinamen
+    const displayFileName = generateFileName(
+      ocrResult.date || new Date().toISOString().split('T')[0],
+      ocrResult.merchant_name || 'Unbekannt',
+      ocrResult.total_amount || 0,
+      ocrResult.invoice_number,
+      category
+    );
+
+    // Upload to storage mit neuem Dateinamen
+    const fileName = `receipts/${userId}/${Date.now()}_${displayFileName}`;
+    const { data: uploadData, error: uploadError } = await supabase
+      .storage
+      .from('accounting-documents')
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
+      });
+
+    if (uploadError) throw uploadError;
+
+    // Try auto-matching (nur für Eingangsrechnungen)
     let matchedTransactionId: string | null = null;
     let matchConfidence = 0;
 
-    if (ocrResult.success && ocrResult.total_amount && ocrResult.date) {
+    if (invoiceType === 'incoming' && ocrResult.success && ocrResult.total_amount && ocrResult.date) {
       const match = await findMatchingTransaction(userId, {
         amount: ocrResult.total_amount,
         date: ocrResult.date,
@@ -173,7 +192,7 @@ router.post('/', upload.single('file'), async (req, res) => {
       }
     }
 
-    // Create receipt record
+    // Create receipt record mit allen neuen Feldern
     const { data: receipt, error: dbError } = await supabase
       .from('receipts')
       .insert({
@@ -183,6 +202,11 @@ router.post('/', upload.single('file'), async (req, res) => {
         total_amount: ocrResult.total_amount,
         vat_amount: ocrResult.vat_amount,
         file_path: uploadData.path,
+        file_name_display: displayFileName,
+        invoice_number: ocrResult.invoice_number,
+        invoice_type: invoiceType,
+        category_id: category?.id,
+        skr04_code: category?.skr04Code,
         ocr_confidence: ocrResult.confidence,
         ocr_raw: ocrResult.raw,
         ocr_status: ocrResult.success ? 'success' : 'error',
@@ -202,6 +226,8 @@ router.post('/', upload.single('file'), async (req, res) => {
     res.status(201).json({
       receipt,
       ocr: ocrResult,
+      category: category,
+      fileName: displayFileName,
       autoMatched: matchedTransactionId ? {
         transactionId: matchedTransactionId,
         confidence: matchConfidence,
@@ -224,12 +250,20 @@ router.patch('/:id', async (req, res) => {
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const updates: Partial<Receipt> = {};
-    const allowedFields = ['merchant_name', 'receipt_date', 'total_amount', 'vat_amount', 'category_id', 'status'];
+    const updates: Partial<Receipt> & { skr04_code?: string } = {};
+    const allowedFields = ['merchant_name', 'receipt_date', 'total_amount', 'vat_amount', 'category_id', 'status', 'invoice_type', 'invoice_number'];
 
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) {
         (updates as any)[field] = req.body[field];
+      }
+    }
+
+    // Wenn Kategorie geändert wird, auch SKR04-Code aktualisieren
+    if (req.body.category_id) {
+      const newCategory = EXPENSE_CATEGORIES.find(c => c.id === req.body.category_id);
+      if (newCategory) {
+        updates.skr04_code = newCategory.skr04Code;
       }
     }
 
@@ -420,6 +454,33 @@ router.get('/months/:year/:month/missing', async (req, res) => {
   } catch (error) {
     console.error('Error fetching missing receipts:', error);
     res.status(500).json({ error: 'Failed to fetch missing receipts' });
+  }
+});
+
+// ============================================
+// GET /api/accounting/receipts/categories
+// Liste aller Kategorien mit SKR04-Konten
+// ============================================
+router.get('/categories/list', async (req, res) => {
+  try {
+    const userId = (req as any).userId as string;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    // Gruppiere nach Eingang/Ausgang
+    const incoming = EXPENSE_CATEGORIES.filter(c => 
+      !['warenverkauf', 'dienstleistungen', 'sonstige_einnahmen'].includes(c.id)
+    );
+    const outgoing = EXPENSE_CATEGORIES.filter(c => 
+      ['warenverkauf', 'dienstleistungen', 'sonstige_einnahmen'].includes(c.id)
+    );
+
+    res.json({
+      incoming: { name: 'Eingangsrechnungen (Ausgaben)', categories: incoming },
+      outgoing: { name: 'Ausgangsrechnungen (Einnahmen)', categories: outgoing },
+    });
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    res.status(500).json({ error: 'Failed to fetch categories' });
   }
 });
 
