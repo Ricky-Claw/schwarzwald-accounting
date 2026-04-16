@@ -21,7 +21,7 @@ const supabase = createClient(
 // ============================================
 router.get('/', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { data, error } = await supabase
@@ -44,7 +44,7 @@ router.get('/', async (req, res) => {
 // ============================================
 router.get('/:id', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     const { id } = req.params;
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -79,7 +79,7 @@ router.get('/:id', async (req, res) => {
 // ============================================
 router.post('/', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { account_name, account_iban, statement_date } = req.body as UploadStatementRequest;
@@ -121,7 +121,7 @@ router.post('/', async (req, res) => {
 // ============================================
 router.delete('/:id', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     const { id } = req.params;
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -160,7 +160,7 @@ router.delete('/:id', async (req, res) => {
 // ============================================
 router.patch('/transactions/:id', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     const { id } = req.params;
     const { notes } = req.body;
 

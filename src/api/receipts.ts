@@ -33,7 +33,7 @@ const supabase = createClient(
 // ============================================
 router.get('/', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { month, status, unmatched } = req.query;
@@ -73,7 +73,7 @@ router.get('/', async (req, res) => {
 // ============================================
 router.get('/:id', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     const { id } = req.params;
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -103,7 +103,7 @@ router.get('/:id', async (req, res) => {
 // ============================================
 router.post('/', upload.single('file'), async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     if (!req.file) {
@@ -219,7 +219,7 @@ router.post('/', upload.single('file'), async (req, res) => {
 // ============================================
 router.patch('/:id', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     const { id } = req.params;
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -256,7 +256,7 @@ router.patch('/:id', async (req, res) => {
 // ============================================
 router.post('/:id/match', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     const { id } = req.params;
     const { transaction_id } = req.body;
 
@@ -282,7 +282,7 @@ router.post('/:id/match', async (req, res) => {
 // ============================================
 router.post('/auto-match', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const result = await autoMatchAllReceipts(userId);
@@ -303,7 +303,7 @@ router.post('/auto-match', async (req, res) => {
 // ============================================
 router.delete('/:id', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     const { id } = req.params;
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -352,7 +352,7 @@ router.delete('/:id', async (req, res) => {
 // GET /api/accounting/dashboard
 router.get('/dashboard/stats', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const stats = await getDashboardStats(userId);
@@ -368,7 +368,7 @@ router.get('/dashboard/stats', async (req, res) => {
 // Liste aller Monate mit Status
 router.get('/months/list', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const months = await getAllMonths(userId);
@@ -384,7 +384,7 @@ router.get('/months/list', async (req, res) => {
 // Detaillierte Übersicht für einen Monat
 router.get('/months/:year/:month', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     const year = parseInt(req.params.year);
     const month = parseInt(req.params.month);
 
@@ -403,7 +403,7 @@ router.get('/months/:year/:month', async (req, res) => {
 // Fehlende Belege für einen Monat
 router.get('/months/:year/:month/missing', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     const year = parseInt(req.params.year);
     const month = parseInt(req.params.month);
 

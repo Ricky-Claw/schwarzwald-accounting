@@ -25,7 +25,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 // ============================================
 router.get('/documents', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { type, status, limit = 50 } = req.query;
@@ -56,7 +56,7 @@ router.get('/documents', async (req, res) => {
 // ============================================
 router.get('/documents/:id', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     const { id } = req.params;
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -83,7 +83,7 @@ router.get('/documents/:id', async (req, res) => {
 // ============================================
 router.post('/documents', upload.single('file'), async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     if (!req.file) {
@@ -141,7 +141,7 @@ router.post('/documents', upload.single('file'), async (req, res) => {
 // ============================================
 router.post('/documents/:id/reprocess', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     const { id } = req.params;
     const { document_type } = req.body;
 
@@ -193,7 +193,7 @@ router.post('/documents/:id/reprocess', async (req, res) => {
 // ============================================
 router.delete('/documents/:id', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     const { id } = req.params;
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -233,7 +233,7 @@ router.delete('/documents/:id', async (req, res) => {
 // ============================================
 router.get('/summary', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { period_start, period_end } = req.query;

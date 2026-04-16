@@ -14,7 +14,7 @@ const router = Router();
 // ============================================
 router.post('/', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const {
@@ -81,7 +81,7 @@ router.post('/', async (req, res) => {
 // ============================================
 router.post('/preview', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { year, month } = req.body;
@@ -122,7 +122,7 @@ router.post('/preview', async (req, res) => {
 // ============================================
 router.get('/status/:year/:month', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
+    const userId = (req as any).userId as string;
     const year = parseInt(req.params.year);
     const month = parseInt(req.params.month);
 
