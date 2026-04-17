@@ -2,6 +2,10 @@
   "cleanUrls": true,
   "trailingSlash": true,
   "rewrites": [
-    { "source": "/", "destination": "/dashboard/" }
+    { "source": "/", "destination": "/dashboard/" },
+    { "source": "/login/", "destination": "/login/" },
+    { "source": "/upload/", "destination": "/upload/" },
+    { "source": "/dashboard/", "destination": "/dashboard/" },
+    { "source": "/export/", "destination": "/export/" }
   ]
 }
