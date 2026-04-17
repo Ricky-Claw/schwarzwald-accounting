@@ -126,6 +126,7 @@ export default function UploadPage() {
         method: 'POST',
         headers: {
           'x-api-key': apiKey,
+          // WICHTIG: Kein Content-Type! Browser setzt automatisch mit Boundary
         },
         body: formData,
       });

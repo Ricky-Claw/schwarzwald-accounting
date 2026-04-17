@@ -40,9 +40,9 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Body parsing
+// Body parsing (NICHT für multipart/form-data - das macht multer)
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ============================================
 // AUTH MIDDLEWARE
