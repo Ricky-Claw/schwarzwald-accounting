@@ -1,11 +1,20 @@
 {
+  "version": 2,
   "cleanUrls": true,
   "trailingSlash": true,
   "rewrites": [
-    { "source": "/", "destination": "/dashboard/" },
-    { "source": "/login/", "destination": "/login/" },
-    { "source": "/upload/", "destination": "/upload/" },
-    { "source": "/dashboard/", "destination": "/dashboard/" },
-    { "source": "/export/", "destination": "/export/" }
+    { "source": "/", "destination": "/dashboard.html" },
+    { "source": "/login/", "destination": "/login.html" },
+    { "source": "/upload/", "destination": "/upload.html" },
+    { "source": "/dashboard/", "destination": "/dashboard.html" },
+    { "source": "/export/", "destination": "/export.html" }
+  ],
+  "routes": [
+    { "src": "/login/?", "dest": "/login.html" },
+    { "src": "/upload/?", "dest": "/upload.html" },
+    { "src": "/dashboard/?", "dest": "/dashboard.html" },
+    { "src": "/export/?", "dest": "/export.html" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/dashboard.html" }
   ]
 }
