@@ -222,7 +222,9 @@ export async function getMonthlyOverview(
   month: number
 ): Promise<MonthlyOverview> {
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
+  // Letzter Tag des Monats korrekt berechnen
+  const lastDay = new Date(year, month, 0).getDate();
+  const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
   // Hole Buchungen
   const { data: transactions, error } = await supabase

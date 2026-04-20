@@ -71,18 +71,16 @@ router.get('/', async (req, res) => {
 
     let query = supabase
       .from('receipts')
-      .select(`
-        *,
-        transaction:bank_transaction_id (*)
-      `)
-      .eq('user_id', userId)
-      .order('receipt_date', { ascending: false });
+      .select('*')
+      .order('created_at', { ascending: false });
 
     if (month) {
-      // Filter by month "2024-02"
+      // Filter by month "2024-02" - korrektes Monatsende berechnen
+      const [year, monthNum] = (month as string).split('-').map(Number);
+      const lastDay = new Date(year, monthNum, 0).getDate();
       query = query
         .gte('receipt_date', `${month}-01`)
-        .lte('receipt_date', `${month}-31`);
+        .lte('receipt_date', `${month}-${String(lastDay).padStart(2, '0')}`);
     }
 
     if (status) query = query.eq('status', status);
