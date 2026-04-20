@@ -53,8 +53,9 @@ function ExportContent() {
 
   async function fetchStatus() {
     setLoading(true);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://lanista-backend.onrender.com';
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounting/export/status/${year}/${month}`);
+      const response = await fetch(`${apiUrl}/api/accounting/export/status/${year}/${month}`);
       const data = await response.json();
       setStatus(data);
     } catch (error) {
@@ -66,8 +67,9 @@ function ExportContent() {
 
   async function handleExport() {
     setDownloading(true);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://lanista-backend.onrender.com';
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounting/export`, {
+      const response = await fetch(`${apiUrl}/api/accounting/export`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

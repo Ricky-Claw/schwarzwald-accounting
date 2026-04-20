@@ -61,6 +61,10 @@ app.get('/health', (req, res) => {
     service: 'schwarzwald-accounting',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
+    ocr: {
+      kimi: !!process.env.MOONSHOT_API_KEY,
+      azure: !!process.env.AZURE_FORM_RECOGNIZER_KEY,
+    }
   });
 });
 
