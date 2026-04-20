@@ -63,10 +63,11 @@ export default function UploadPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const apiKey = localStorage.getItem('apiKey');
-    if (!apiKey) {
-      router.push('/login');
-    }
+    // Skip auth check for now - use hardcoded key
+    // const apiKey = localStorage.getItem('apiKey');
+    // if (!apiKey) {
+    //   router.push('/login');
+    // }
   }, [router]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
@@ -103,7 +104,10 @@ export default function UploadPage() {
 
   const uploadFile = async (fileObj: UploadingFile) => {
     try {
-      const apiKey = localStorage.getItem('apiKey') || 'lanista-secret-key-2024';
+      // Hardcoded API key for now - matches backend default
+      const apiKey = 'lanista-secret-key-2024';
+      
+      console.log('Uploading with API key:', apiKey.substring(0, 10) + '...');
       
       const formData = new FormData();
       formData.append('file', fileObj.file);
@@ -122,18 +126,25 @@ export default function UploadPage() {
         );
       }, 200);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounting/receipts`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://lanista-backend.onrender.com';
+      console.log('API URL:', apiUrl);
+
+      const response = await fetch(`${apiUrl}/api/accounting/receipts`, {
         method: 'POST',
         headers: {
           'x-api-key': apiKey,
-          // WICHTIG: Kein Content-Type! Browser setzt automatisch mit Boundary
         },
         body: formData,
       });
 
-      clearInterval(progressInterval);
+      console.log('Response status:', response.status);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+      }
 
-      if (!response.ok) throw new Error('Upload failed');
+      clearInterval(progressInterval);
 
       const data = await response.json();
       
