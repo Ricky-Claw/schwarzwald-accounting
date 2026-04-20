@@ -29,6 +29,36 @@ const supabase = createClient(
 );
 
 // ============================================
+// HELPER: Ensure user exists in auth.users
+// ============================================
+async function ensureUserExists(userId: string): Promise<void> {
+  try {
+    // Check if user exists
+    const { data, error } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', userId)
+      .single();
+    
+    if (data) return; // User exists
+    
+    console.log('Creating missing user:', userId);
+    
+    // Create user in public.users table
+    await supabase.from('users').insert({
+      id: userId,
+      email: 'api@lanista.local',
+      created_at: new Date().toISOString(),
+    });
+    
+    console.log('User created successfully');
+  } catch (err) {
+    console.error('Error ensuring user exists:', err);
+    // Don't throw - let the insert fail naturally if it's a real problem
+  }
+}
+
+// ============================================
 // GET /api/accounting/receipts
 // Liste aller Belege
 // ============================================
@@ -192,6 +222,9 @@ router.post('/', upload.single('file'), async (req, res) => {
       }
     }
 
+    // Ensure user exists before creating receipt
+    await ensureUserExists(userId);
+    
     // Create receipt record mit allen neuen Feldern
     // category_id wird nicht gesetzt - DB erwartet UUID, wir haben nur String-ID
     // skr04_code reicht für die Buchhaltung
