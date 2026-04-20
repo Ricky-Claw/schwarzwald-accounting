@@ -224,17 +224,21 @@ export async function getMonthlyOverview(
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
   const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
 
-  // Hole Buchungen mit Belegen
+  // Hole Buchungen
   const { data: transactions, error } = await supabase
     .from('bank_transactions')
-    .select(`
-      *,
-      receipt:receipt_id (*)
-    `)
+    .select('*')
     .eq('user_id', userId)
     .gte('transaction_date', startDate)
     .lte('transaction_date', endDate)
     .order('transaction_date', { ascending: false });
+  
+  // Hole zugehörige Belege separat
+  const receiptIds = (transactions || []).map(t => t.receipt_id).filter(Boolean);
+  const { data: receipts } = await supabase
+    .from('receipts')
+    .select('*')
+    .in('id', receiptIds);
 
   if (error) throw error;
 
@@ -243,14 +247,18 @@ export async function getMonthlyOverview(
     'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
   ];
 
+  // Erstelle Map für schnellen Beleg-Lookup
+  const receiptMap = new Map((receipts || []).map(r => [r.id, r]));
+  
   const enrichedTransactions: TransactionWithReceipt[] = (transactions || []).map(t => {
     // Bestimme ob Beleg nötig ist
     const needsReceipt = shouldHaveReceipt(t);
-    const hasReceipt = !!t.receipt_id && !!t.receipt;
+    const receipt = t.receipt_id ? receiptMap.get(t.receipt_id) : undefined;
+    const hasReceipt = !!t.receipt_id && !!receipt;
     
     return {
       ...t,
-      receipt: t.receipt || undefined,
+      receipt: receipt || undefined,
       matchingStatus: hasReceipt 
         ? 'matched' 
         : needsReceipt 
