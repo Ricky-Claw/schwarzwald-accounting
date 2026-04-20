@@ -14,7 +14,7 @@ services:
       - key: PORT
         value: 10000
       - key: FRONTEND_URL
-        value: https://lanista-buchhaltung-ppwlssqlx-ricky-claws-projects.vercel.app
+        value: https://lanista-buchhaltung.vercel.app
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_KEY
