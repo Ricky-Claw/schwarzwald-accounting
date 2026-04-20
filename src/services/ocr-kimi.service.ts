@@ -93,7 +93,7 @@ Gib NUR das JSON zurück, ohne Erklärungen.`
       body: JSON.stringify({
         model: 'kimi-k2.5',
         messages,
-        temperature: 0.1,
+        temperature: 1,
         max_tokens: 1000
       })
     });
@@ -258,7 +258,7 @@ Gib NUR das JSON zurück.`
       body: JSON.stringify({
         model: 'kimi-k2.5',
         messages,
-        temperature: 0.1,
+        temperature: 1,
         max_tokens: 2000
       })
     });
