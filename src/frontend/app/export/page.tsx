@@ -56,10 +56,16 @@ function ExportContent() {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://lanista-backend.onrender.com';
     try {
       const response = await fetch(`${apiUrl}/api/accounting/export/status/${year}/${month}`);
+      if (!response.ok) {
+        console.error('Export status API error:', response.status);
+        setStatus(null);
+        return;
+      }
       const data = await response.json();
       setStatus(data);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error fetching export status:', error);
+      setStatus(null);
     } finally {
       setLoading(false);
     }
@@ -265,7 +271,7 @@ function ExportContent() {
                 <div className="flex items-center justify-center h-64">
                   <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
                 </div>
-              ) : status ? (
+              ) : status?.summary ? (
                 <div className="space-y-6">
                   {/* Status Header */}
                   <div className={`p-4 rounded-lg border ${
@@ -321,7 +327,7 @@ function ExportContent() {
                   </div>
 
                   {/* Missing Receipts List */}
-                  {status.summary.missingReceipts.length > 0 && (
+                  {status.summary.missingReceipts?.length > 0 && (
                     <div className="border border-slate-200 rounded-lg overflow-hidden">
                       <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
                         <h4 className="font-medium text-slate-900">Fehlende Belege</h4>
@@ -354,9 +360,9 @@ function ExportContent() {
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
                     onClick={handleExport}
-                    disabled={downloading || (!includeIncomplete && !status.readyForTaxOffice)}
+                    disabled={downloading || (!includeIncomplete && !status?.readyForTaxOffice)}
                     className={`w-full py-4 rounded-lg font-semibold text-lg flex items-center justify-center gap-3 transition-colors ${
-                      !includeIncomplete && !status.readyForTaxOffice
+                      !includeIncomplete && !status?.readyForTaxOffice
                         ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                         : 'bg-emerald-600 text-white hover:bg-emerald-700'
                     }`}
@@ -369,7 +375,7 @@ function ExportContent() {
                     ) : (
                       <>
                         <Download className="w-5 h-5" />
-                        {status.readyForTaxOffice
+                        {status?.readyForTaxOffice
                           ? 'Export herunterladen'
                           : includeIncomplete
                           ? 'Unvollständig exportieren'
@@ -378,7 +384,13 @@ function ExportContent() {
                     )}
                   </motion.button>
                 </div>
-              ) : null}
+              ) : (
+                <div className="flex flex-col items-center justify-center h-64 text-slate-500">
+                  <AlertCircle className="w-12 h-12 mb-4" />
+                  <p>Keine Daten für diesen Zeitraum verfügbar</p>
+                  <p className="text-sm mt-2">Stellen Sie sicher, dass Kontoauszüge hochgeladen wurden</p>
+                </div>
+              )}
             </motion.div>
           </div>
         </div>
