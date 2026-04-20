@@ -10,6 +10,21 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+interface Receipt {
+  id: string;
+  merchant_name: string;
+  receipt_date: string;
+  total_amount: number;
+  file_name_display: string;
+  created_at: string;
+  skr04_code: string;
+}
+
+interface TimeGroup {
+  label: string;
+  receipts: Receipt[];
+}
+
 interface MonthStatus {
   month: string;
   monthName: string;
@@ -35,6 +50,7 @@ interface DashboardStats {
 export default function DashboardPage() {
   const [months, setMonths] = useState<MonthStatus[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [recentReceipts, setRecentReceipts] = useState<Receipt[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -50,18 +66,22 @@ export default function DashboardPage() {
   async function fetchDashboard() {
     try {
       const apiKey = localStorage.getItem('apiKey') || process.env.NEXT_PUBLIC_API_KEY || 'lanista-secret-key-2024';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://lanista-backend.onrender.com';
       const headers: Record<string, string> = { 'x-api-key': apiKey };
       
-      const [monthsRes, statsRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounting/receipts/months/list`, { headers }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounting/receipts/dashboard/stats`, { headers }),
+      const [monthsRes, statsRes, receiptsRes] = await Promise.all([
+        fetch(`${apiUrl}/api/accounting/receipts/months/list`, { headers }),
+        fetch(`${apiUrl}/api/accounting/receipts/dashboard/stats`, { headers }),
+        fetch(`${apiUrl}/api/accounting/receipts?limit=50`, { headers }),
       ]);
       
       const monthsData = await monthsRes.json();
       const statsData = await statsRes.json();
+      const receiptsData = await receiptsRes.json();
       
       setMonths(monthsData.months || []);
       setStats(statsData);
+      setRecentReceipts(receiptsData.receipts || []);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -193,8 +213,11 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Time-based Recent Uploads */}
+        <RecentUploadsSection />
+
         {/* Month Cards */}
-        <div>
+        <div className="mt-8">
           <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
             <Calendar className="w-5 h-5 text-slate-500" />
             Übersicht nach Monat
@@ -315,5 +338,153 @@ function MonthCard({ month, index }: { month: MonthStatus; index: number }) {
         </Link>
       )}
     </motion.div>
+  );
+}
+
+// Time-based folder organization component
+function RecentUploadsSection() {
+  const router = useRouter();
+  const [timeGroups, setTimeGroups] = useState<TimeGroup[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchRecentReceipts();
+  }, []);
+
+  async function fetchRecentReceipts() {
+    try {
+      const apiKey = 'lanista-secret-key-2024';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://lanista-backend.onrender.com';
+      
+      const response = await fetch(`${apiUrl}/api/accounting/receipts?limit=100`, {
+        headers: { 'x-api-key': apiKey }
+      });
+      
+      const data = await response.json();
+      const receipts: Receipt[] = data.receipts || [];
+      
+      // Group by time periods
+      const groups = groupReceiptsByTime(receipts);
+      setTimeGroups(groups);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function groupReceiptsByTime(receipts: Receipt[]): TimeGroup[] {
+    const now = new Date();
+    const groups: { [key: string]: Receipt[] } = {};
+    
+    receipts.forEach(receipt => {
+      const created = new Date(receipt.created_at);
+      const diffMs = now.getTime() - created.getTime();
+      const diffMins = Math.floor(diffMs / (1000 * 60));
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      
+      let key: string;
+      
+      if (diffMins < 5) {
+        key = 'Gerade';
+      } else if (diffMins < 20) {
+        key = 'Vor 15 Min';
+      } else if (diffHours < 1) {
+        key = 'Vor 1h';
+      } else if (diffHours < 2) {
+        key = 'Vor 2h';
+      } else if (diffDays < 1) {
+        key = 'Heute';
+      } else if (diffDays < 2) {
+        key = 'Vor 1 Tag';
+      } else if (diffDays < 7) {
+        key = 'Diese Woche';
+      } else if (diffDays < 14) {
+        key = 'Letzte Woche';
+      } else {
+        key = created.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+      }
+      
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(receipt);
+    });
+    
+    // Sort order
+    const order = ['Gerade', 'Vor 15 Min', 'Vor 1h', 'Vor 2h', 'Heute', 'Vor 1 Tag', 'Diese Woche', 'Letzte Woche'];
+    
+    return Object.entries(groups)
+      .sort((a, b) => {
+        const idxA = order.indexOf(a[0]);
+        const idxB = order.indexOf(b[0]);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return b[1][0].created_at.localeCompare(a[1][0].created_at);
+      })
+      .map(([label, receipts]) => ({ label, receipts }));
+  }
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl p-6 border border-slate-200">
+        <h2 className="text-lg font-semibold text-slate-900 mb-4">Neueste Uploads</h2>
+        <div className="animate-pulse space-y-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-12 bg-slate-100 rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (timeGroups.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="bg-white rounded-xl p-6 border border-slate-200">
+      <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+        <Receipt className="w-5 h-5 text-slate-500" />
+        Neueste Uploads
+      </h2>
+      
+      <div className="space-y-4">
+        {timeGroups.slice(0, 6).map((group) => (
+          <div key={group.label} className="border-l-4 border-emerald-400 pl-4">
+            <h3 className="font-medium text-slate-900 mb-2 flex items-center gap-2">
+              {group.label}
+              <span className="text-sm text-slate-500 font-normal">
+                ({group.receipts.length})
+              </span>
+            </h3>
+            <div className="space-y-2">
+              {group.receipts.slice(0, 3).map((receipt) => (
+                <div 
+                  key={receipt.id}
+                  onClick={() => router.push(`/dashboard/months/${receipt.receipt_date?.slice(0, 7) || '2025-04'}`)}
+                  className="flex items-center justify-between p-2 hover:bg-slate-50 rounded-lg cursor-pointer text-sm"
+                >
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-slate-400" />
+                    <span className="truncate max-w-[200px]">
+                      {receipt.merchant_name || 'Unbekannt'}
+                    </span>
+                  </div>
+                  <span className="font-medium text-slate-700">
+                    {receipt.total_amount?.toFixed(2)} €
+                  </span>
+                </div>
+              ))}
+              {group.receipts.length > 3 && (
+                <p className="text-xs text-slate-400 pl-6">
+                  +{group.receipts.length - 3} weitere
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
