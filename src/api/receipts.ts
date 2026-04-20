@@ -156,9 +156,13 @@ router.post('/', upload.single('file'), async (req, res) => {
     // OCR processing - Kimi Vision bevorzugt, dann Azure Fallback
     let ocrResult;
     
+    console.log('OCR Check - Kimi available:', isKimiOCRAvailable());
+    console.log('OCR Check - Azure available:', !!process.env.AZURE_FORM_RECOGNIZER_KEY);
+    
     if (isKimiOCRAvailable()) {
       console.log('Using Kimi Vision for OCR...');
       ocrResult = await extractReceiptDataWithKimi(req.file.buffer, req.file.mimetype);
+      console.log('Kimi OCR result:', JSON.stringify(ocrResult, null, 2));
     } else if (process.env.AZURE_FORM_RECOGNIZER_KEY) {
       console.log('Using Azure OCR...');
       ocrResult = await extractReceiptData(req.file.buffer);

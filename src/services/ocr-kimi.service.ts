@@ -106,17 +106,22 @@ Gib NUR das JSON zurück, ohne Erklärungen.`
     const result: any = await response.json();
     const content = result.choices?.[0]?.message?.content || '';
 
+    console.log('Kimi OCR raw response:', content.substring(0, 500));
+
     // JSON aus Response extrahieren
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
+      console.error('Kimi OCR: No JSON found in response');
       return {
         success: false,
         confidence: 0,
-        error: 'Keine gültigen Daten extrahiert'
+        error: 'Keine gültigen Daten extrahiert',
+        raw: content
       };
     }
 
     const extracted = JSON.parse(jsonMatch[0]);
+    console.log('Kimi OCR extracted:', JSON.stringify(extracted, null, 2));
 
     return {
       success: true,
