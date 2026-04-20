@@ -6,7 +6,7 @@
 import type { OCRResult, AmazonOCRResult, AmazonDocumentType } from '../types/index.js';
 
 const MOONSHOT_API_KEY = process.env.MOONSHOT_API_KEY;
-const MOONSHOT_BASE_URL = 'https://api.moonshot.cn/v1';
+const MOONSHOT_BASE_URL = 'https://api.moonshot.ai/v1';
 
 interface KimiMessage {
   role: 'user' | 'assistant' | 'system';
