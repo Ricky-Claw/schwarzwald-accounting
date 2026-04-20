@@ -249,6 +249,7 @@ function StatCard({
 
 function MonthCard({ month, index }: { month: MonthStatus; index: number }) {
   const progress = month.total > 0 ? (month.matched / month.total) * 100 : 0;
+  const router = useRouter();
 
   const statusConfig = {
     complete: { bg: 'bg-emerald-50', border: 'border-emerald-200', bar: 'bg-emerald-500', text: 'text-emerald-700' },
@@ -258,12 +259,17 @@ function MonthCard({ month, index }: { month: MonthStatus; index: number }) {
 
   const config = statusConfig[month.status];
 
+  const handleClick = () => {
+    router.push(`/dashboard/months/${month.month}`);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className={`rounded-xl p-5 border shadow-sm ${config.bg} ${config.border}`}
+      onClick={handleClick}
+      className={`rounded-xl p-5 border shadow-sm cursor-pointer hover:shadow-md transition-shadow ${config.bg} ${config.border}`}
     >
       <div className="flex items-start justify-between mb-3">
         <div>
