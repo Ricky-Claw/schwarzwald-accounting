@@ -193,6 +193,8 @@ router.post('/', upload.single('file'), async (req, res) => {
     }
 
     // Create receipt record mit allen neuen Feldern
+    // category_id wird nicht gesetzt - DB erwartet UUID, wir haben nur String-ID
+    // skr04_code reicht für die Buchhaltung
     const { data: receipt, error: dbError } = await supabase
       .from('receipts')
       .insert({
@@ -205,7 +207,6 @@ router.post('/', upload.single('file'), async (req, res) => {
         file_name_display: displayFileName,
         invoice_number: ocrResult.invoice_number,
         invoice_type: invoiceType,
-        category_id: category?.id,
         skr04_code: category?.skr04Code,
         ocr_confidence: ocrResult.confidence,
         ocr_raw: ocrResult.raw,
