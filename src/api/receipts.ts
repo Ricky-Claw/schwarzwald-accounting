@@ -222,16 +222,13 @@ router.post('/', upload.single('file'), async (req, res) => {
       }
     }
 
-    // Ensure user exists before creating receipt
-    await ensureUserExists(userId);
-    
     // Create receipt record mit allen neuen Feldern
     // category_id wird nicht gesetzt - DB erwartet UUID, wir haben nur String-ID
     // skr04_code reicht für die Buchhaltung
     const { data: receipt, error: dbError } = await supabase
       .from('receipts')
       .insert({
-        user_id: userId,
+        // user_id removed - FK constraint dropped
         merchant_name: ocrResult.merchant_name,
         receipt_date: ocrResult.date,
         total_amount: ocrResult.total_amount,
