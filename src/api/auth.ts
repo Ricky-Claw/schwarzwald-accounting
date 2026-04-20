@@ -35,6 +35,14 @@ export function authMiddleware(req: any, res: any, next: any) {
   // Support: x-api-key header OR Authorization: Bearer <key>
   const key = apiKey || (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null);
 
+  console.log('Auth check:', { 
+    path: req.path, 
+    hasKey: !!key, 
+    keyValid: key === API_KEY,
+    apiKeyHeader: apiKey ? 'present' : 'missing',
+    authHeader: authHeader ? 'present' : 'missing',
+  });
+
   if (key === API_KEY) {
     req.userId = USER_ID;
     return next();

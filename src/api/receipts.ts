@@ -233,9 +233,18 @@ router.post('/', upload.single('file'), async (req, res) => {
         confidence: matchConfidence,
       } : null,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error uploading receipt:', error);
-    res.status(500).json({ error: 'Failed to upload receipt' });
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+    });
+    res.status(500).json({ 
+      error: 'Failed to upload receipt',
+      details: error.message,
+      code: error.code,
+    });
   }
 });
 
