@@ -6,6 +6,7 @@
 import { Router } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import multer from 'multer';
+import crypto from 'crypto';
 import { extractReceiptData } from '../services/ocr.service.js';
 import { extractReceiptDataWithKimi, isKimiOCRAvailable } from '../services/ocr-kimi.service.js';
 import { EXPENSE_CATEGORIES, autoCategorize, generateFileName } from '../types/categories.js';
@@ -21,7 +22,37 @@ import {
 import type { Receipt } from '../types/index.js';
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB max
+  }
+});
+
+// ============================================
+// HELPER: File Hash für Duplikat-Erkennung
+// ============================================
+function calculateFileHash(buffer: Buffer): string {
+  return crypto.createHash('sha256').update(buffer).digest('hex');
+}
+
+// ============================================
+// HELPER: Duplikat-Prüfung
+// ============================================
+async function checkDuplicate(userId: string, fileHash: string): Promise<{ isDuplicate: boolean; existingReceipt?: any }> {
+  const { data, error } = await supabase
+    .from('receipts')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('file_hash', fileHash)
+    .single();
+  
+  if (error || !data) {
+    return { isDuplicate: false };
+  }
+  
+  return { isDuplicate: true, existingReceipt: data };
+}
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -140,10 +171,31 @@ router.post('/', upload.single('file'), async (req, res) => {
     }
 
     // Validiere Dateityp (Bilder und PDFs)
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp', 'application/pdf'];
     if (!allowedTypes.includes(req.file.mimetype)) {
       return res.status(400).json({ 
-        error: 'Invalid file type. Allowed: JPG, PNG, WebP, PDF' 
+        error: `Invalid file type: ${req.file.mimetype}. Allowed: JPG, PNG, WebP, GIF, BMP, PDF` 
+      });
+    }
+
+    // Berechne File-Hash für Duplikat-Erkennung
+    const fileHash = calculateFileHash(req.file.buffer);
+    console.log('File hash:', fileHash);
+
+    // Prüfe auf Duplikat
+    const duplicateCheck = await checkDuplicate(userId, fileHash);
+    if (duplicateCheck.isDuplicate) {
+      return res.status(409).json({
+        error: 'Duplicate file detected',
+        message: 'Diese Datei wurde bereits hochgeladen',
+        existingReceipt: {
+          id: duplicateCheck.existingReceipt.id,
+          file_name_display: duplicateCheck.existingReceipt.file_name_display,
+          receipt_date: duplicateCheck.existingReceipt.receipt_date,
+          total_amount: duplicateCheck.existingReceipt.total_amount,
+          created_at: duplicateCheck.existingReceipt.created_at,
+        },
+        suggestion: 'Löschen Sie die alte Datei oder wählen Sie eine andere'
       });
     }
 
@@ -237,6 +289,7 @@ router.post('/', upload.single('file'), async (req, res) => {
         vat_amount: ocrResult.vat_amount,
         file_path: uploadData.path,
         file_name_display: displayFileName,
+        file_hash: fileHash,
         invoice_number: ocrResult.invoice_number,
         invoice_type: invoiceType,
         skr04_code: category?.skr04Code,
