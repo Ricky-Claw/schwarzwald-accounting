@@ -172,9 +172,19 @@ router.post('/', upload.single('file'), async (req, res) => {
 
     // Validiere Dateityp (Bilder und PDFs)
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp', 'application/pdf'];
-    if (!allowedTypes.includes(req.file.mimetype)) {
+    
+    // Zusätzliche Prüfung: Buffer Magic Number
+    const isValidImage = req.file.buffer.slice(0, 4).toString('hex').startsWith('ffd8') || // JPEG
+                        req.file.buffer.slice(0, 4).toString('hex') === '89504e47' || // PNG
+                        req.file.buffer.slice(0, 3).toString('hex') === '474946' || // GIF
+                        req.file.buffer.slice(0, 2).toString('hex') === '424d' || // BMP
+                        req.file.buffer.slice(0, 4).toString('hex') === '25504446'; // PDF (%PDF)
+    
+    if (!allowedTypes.includes(req.file.mimetype) || !isValidImage) {
+      console.error(`Invalid file upload: mimetype=${req.file.mimetype}, valid=${isValidImage}`);
       return res.status(400).json({ 
-        error: `Invalid file type: ${req.file.mimetype}. Allowed: JPG, PNG, WebP, GIF, BMP, PDF` 
+        error: `Invalid file type: ${req.file.mimetype}. Only JPG, PNG, WebP, GIF, BMP, PDF allowed`,
+        details: 'Please upload a valid image or PDF file'
       });
     }
 
