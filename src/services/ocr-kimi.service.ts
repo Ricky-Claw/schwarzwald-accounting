@@ -30,10 +30,11 @@ function createDataUrl(buffer: Buffer, mimeType: string): string {
 }
 
 /**
- * Konvertiert PDF zu Bild (PNG)
+ * Konvertiert PDF zu Bildern (PNG)
  * Kimi Vision unterstützt keine PDFs direkt
+ * Gibt die ersten 3 Seiten zurück (für mehrseitige Rechnungen)
  */
-async function convertPdfToImage(pdfBuffer: Buffer): Promise<Buffer> {
+async function convertPdfToImages(pdfBuffer: Buffer): Promise<Buffer[]> {
   try {
     const convert = fromBuffer(pdfBuffer, {
       density: 150,
@@ -42,27 +43,24 @@ async function convertPdfToImage(pdfBuffer: Buffer): Promise<Buffer> {
       height: 1600,
     });
     
-    // Konvertiere nur erste Seite
-    const result = await convert(1);
+    // Konvertiere Seiten 1-3 (oder weniger wenn PDF kürzer)
+    const results = await convert.bulk([1, 2, 3], { responseType: 'buffer' });
     
-    if (!result) {
+    if (!results || results.length === 0) {
       throw new Error('PDF Konvertierung fehlgeschlagen');
     }
     
-    // pdf2pic gibt Buffer direkt zurück oder als Array
-    if (Buffer.isBuffer(result)) {
-      return result;
+    // Filtere gültige Buffer
+    const validBuffers = results
+      .map(r => r.buffer || r)
+      .filter(b => Buffer.isBuffer(b)) as Buffer[];
+    
+    if (validBuffers.length === 0) {
+      throw new Error('PDF Konvertierung: Keine gültigen Bilder erhalten');
     }
     
-    // Falls Array (bei mehreren Seiten)
-    if (Array.isArray(result) && result.length > 0) {
-      const firstPage = result[0];
-      if (Buffer.isBuffer(firstPage)) {
-        return firstPage;
-      }
-    }
-    
-    throw new Error('PDF Konvertierung: Kein gültiger Buffer erhalten');
+    console.log(`PDF konvertiert: ${validBuffers.length} Seite(n)`);
+    return validBuffers;
   } catch (error) {
     console.error('PDF zu Bild Konvertierung fehlgeschlagen:', error);
     throw new Error('PDF konnte nicht konvertiert werden: ' + (error as Error).message);
@@ -85,34 +83,40 @@ export async function extractReceiptDataWithKimi(
   }
 
   try {
-    // Prüfe ob PDF - dann zu Bild konvertieren
-    let imageBuffer = fileBuffer;
+    // Prüfe ob PDF - dann zu Bildern konvertieren
+    let imageBuffers: Buffer[] = [fileBuffer];
     let imageMimeType = mimeType;
     
     if (mimeType === 'application/pdf') {
-      console.log('PDF erkannt, konvertiere zu Bild...');
-      imageBuffer = await convertPdfToImage(fileBuffer);
+      console.log('PDF erkannt, konvertiere zu Bildern...');
+      imageBuffers = await convertPdfToImages(fileBuffer);
       imageMimeType = 'image/png';
-      console.log('PDF erfolgreich zu PNG konvertiert');
+      console.log(`PDF erfolgreich zu ${imageBuffers.length} PNG(s) konvertiert`);
     }
     
-    const dataUrl = createDataUrl(imageBuffer, imageMimeType);
+    // Erstelle Data URLs für alle Bilder (max 3)
+    const dataUrls = imageBuffers.slice(0, 3).map(buf => createDataUrl(buf, imageMimeType));
 
+    // Baue Content mit allen Bildern
+    const imageContents = dataUrls.map(url => ({
+      type: 'image_url' as const,
+      image_url: { url }
+    }));
+    
+    const pageInfo = dataUrls.length > 1 ? `(Seiten 1-${dataUrls.length} von PDF)` : '';
+    
     const messages: KimiMessage[] = [
       {
         role: 'system',
-        content: 'Du bist ein OCR-Assistent für Buchhaltungsbelege. Extrahiere strukturierte Daten aus dem Bild.'
+        content: 'Du bist ein OCR-Assistent für Buchhaltungsbelege. Extrahiere strukturierte Daten aus allen bereitgestellten Bildern.'
       },
       {
         role: 'user',
         content: [
-          {
-            type: 'image_url',
-            image_url: { url: dataUrl }
-          },
+          ...imageContents,
           {
             type: 'text',
-            text: `Analysiere diesen Beleg/Rechnung und extrahiere folgende Daten im JSON-Format:
+            text: `Analysiere diesen Beleg/Rechnung ${pageInfo} und extrahiere folgende Daten im JSON-Format:
 {
   "merchant_name": "Name des Händlers/Ladens",
   "date": "Datum im Format YYYY-MM-DD",
@@ -120,11 +124,13 @@ export async function extractReceiptDataWithKimi(
   "vat_amount": MwSt-Betrag als Zahl (wenn erkennbar),
   "vat_rate": MwSt-Satz als Zahl z.B. 19 (wenn erkennbar),
   "currency": "Währung z.B. EUR",
-  "receipt_number": "Belegnummer/Rechnungsnummer/Rechnungsnummer",
+  "receipt_number": "Belegnummer/Rechnungsnummer",
   "payment_method": "Zahlungsmethode wenn erkennbar",
-  "invoice_type": "incoming oder outgoing (nur bei Rechnungen)"
+  "invoice_type": "incoming oder outgoing",
+  "page_count": ${dataUrls.length}
 }
 
+WICHTIG: Die Gesamtsumme steht oft auf der letzten Seite. Prüfe alle Seiten.
 Gib NUR das JSON zurück, ohne Erklärungen.`
           }
         ]
@@ -214,17 +220,18 @@ export async function extractAmazonDocumentWithKimi(
   }
 
   try {
-    // PDF zu Bild konvertieren falls nötig
-    let imageBuffer = fileBuffer;
+    // PDF zu Bildern konvertieren falls nötig
+    let imageBuffers: Buffer[] = [fileBuffer];
     let imageMimeType = mimeType;
     
     if (mimeType === 'application/pdf') {
-      console.log('Amazon PDF erkannt, konvertiere zu Bild...');
-      imageBuffer = await convertPdfToImage(fileBuffer);
+      console.log('Amazon PDF erkannt, konvertiere zu Bildern...');
+      imageBuffers = await convertPdfToImages(fileBuffer);
       imageMimeType = 'image/png';
     }
     
-    const dataUrl = createDataUrl(imageBuffer, imageMimeType);
+    // Erstelle Data URLs für alle Bilder (max 3)
+    const dataUrls = imageBuffers.slice(0, 3).map(buf => createDataUrl(buf, imageMimeType));
 
     const docTypePrompts: Partial<Record<AmazonDocumentType, string>> = {
       settlement_statement: `Extrahiere Amazon Settlement Statement Daten:
@@ -283,6 +290,14 @@ export async function extractAmazonDocumentWithKimi(
 }`
     };
 
+    // Baue Content mit allen Bildern
+    const imageContents = dataUrls.map(url => ({
+      type: 'image_url' as const,
+      image_url: { url }
+    }));
+    
+    const pageInfo = dataUrls.length > 1 ? `(Seiten 1-${dataUrls.length})` : '';
+    
     const messages: KimiMessage[] = [
       {
         role: 'system',
@@ -291,14 +306,12 @@ export async function extractAmazonDocumentWithKimi(
       {
         role: 'user',
         content: [
-          {
-            type: 'image_url',
-            image_url: { url: dataUrl }
-          },
+          ...imageContents,
           {
             type: 'text',
-            text: `Analysiere dieses Amazon ${documentType} Dokument. ${docTypePrompts[documentType]}
+            text: `Analysiere dieses Amazon ${documentType} Dokument ${pageInfo}. ${docTypePrompts[documentType]}
 
+WICHTIG: Summen und Totals stehen oft auf der letzten Seite. Prüfe alle Seiten.
 Gib NUR das JSON zurück.`
           }
         ]
