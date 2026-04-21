@@ -4,6 +4,7 @@
 // ============================================
 
 import type { OCRResult, AmazonOCRResult, AmazonDocumentType } from '../types/index.js';
+import { fromBuffer } from 'pdf2pic';
 
 const MOONSHOT_API_KEY = process.env.MOONSHOT_API_KEY;
 const MOONSHOT_BASE_URL = 'https://api.moonshot.ai/v1';
@@ -21,12 +22,51 @@ export function isKimiOCRAvailable(): boolean {
 }
 
 /**
- * Konvertiert PDF zu Base64 Data URL für Kimi
- * Kimi unterstützt PDFs direkt als base64
+ * Konvertiert Buffer zu Base64 Data URL
  */
 function createDataUrl(buffer: Buffer, mimeType: string): string {
   const base64 = buffer.toString('base64');
   return `data:${mimeType};base64,${base64}`;
+}
+
+/**
+ * Konvertiert PDF zu Bild (PNG)
+ * Kimi Vision unterstützt keine PDFs direkt
+ */
+async function convertPdfToImage(pdfBuffer: Buffer): Promise<Buffer> {
+  try {
+    const convert = fromBuffer(pdfBuffer, {
+      density: 150,
+      format: 'png',
+      width: 1200,
+      height: 1600,
+    });
+    
+    // Konvertiere nur erste Seite
+    const result = await convert(1);
+    
+    if (!result) {
+      throw new Error('PDF Konvertierung fehlgeschlagen');
+    }
+    
+    // pdf2pic gibt Buffer direkt zurück oder als Array
+    if (Buffer.isBuffer(result)) {
+      return result;
+    }
+    
+    // Falls Array (bei mehreren Seiten)
+    if (Array.isArray(result) && result.length > 0) {
+      const firstPage = result[0];
+      if (Buffer.isBuffer(firstPage)) {
+        return firstPage;
+      }
+    }
+    
+    throw new Error('PDF Konvertierung: Kein gültiger Buffer erhalten');
+  } catch (error) {
+    console.error('PDF zu Bild Konvertierung fehlgeschlagen:', error);
+    throw new Error('PDF konnte nicht konvertiert werden: ' + (error as Error).message);
+  }
 }
 
 /**
@@ -45,11 +85,18 @@ export async function extractReceiptDataWithKimi(
   }
 
   try {
-    // Prüfe ob PDF oder Bild
-    const isPdf = mimeType === 'application/pdf';
-    const dataUrl = createDataUrl(fileBuffer, mimeType);
+    // Prüfe ob PDF - dann zu Bild konvertieren
+    let imageBuffer = fileBuffer;
+    let imageMimeType = mimeType;
     
-    const fileTypeDescription = isPdf ? 'PDF-Rechnung' : 'Beleg';
+    if (mimeType === 'application/pdf') {
+      console.log('PDF erkannt, konvertiere zu Bild...');
+      imageBuffer = await convertPdfToImage(fileBuffer);
+      imageMimeType = 'image/png';
+      console.log('PDF erfolgreich zu PNG konvertiert');
+    }
+    
+    const dataUrl = createDataUrl(imageBuffer, imageMimeType);
 
     const messages: KimiMessage[] = [
       {
@@ -65,7 +112,7 @@ export async function extractReceiptDataWithKimi(
           },
           {
             type: 'text',
-            text: `Analysiere diese ${fileTypeDescription} und extrahiere folgende Daten im JSON-Format:
+            text: `Analysiere diesen Beleg/Rechnung und extrahiere folgende Daten im JSON-Format:
 {
   "merchant_name": "Name des Händlers/Ladens",
   "date": "Datum im Format YYYY-MM-DD",
@@ -167,8 +214,17 @@ export async function extractAmazonDocumentWithKimi(
   }
 
   try {
-    const base64Image = fileBuffer.toString('base64');
-    const dataUrl = `data:${mimeType};base64,${base64Image}`;
+    // PDF zu Bild konvertieren falls nötig
+    let imageBuffer = fileBuffer;
+    let imageMimeType = mimeType;
+    
+    if (mimeType === 'application/pdf') {
+      console.log('Amazon PDF erkannt, konvertiere zu Bild...');
+      imageBuffer = await convertPdfToImage(fileBuffer);
+      imageMimeType = 'image/png';
+    }
+    
+    const dataUrl = createDataUrl(imageBuffer, imageMimeType);
 
     const docTypePrompts: Partial<Record<AmazonDocumentType, string>> = {
       settlement_statement: `Extrahiere Amazon Settlement Statement Daten:
