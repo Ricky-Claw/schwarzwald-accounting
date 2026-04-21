@@ -170,22 +170,48 @@ router.post('/', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
+    // DEBUG: Logge Datei-Details
+    console.log('Upload Debug:', {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      bufferFirstBytes: req.file.buffer.slice(0, 8).toString('hex'),
+      bufferPreview: req.file.buffer.slice(0, 50).toString().replace(/\n/g, '\\n')
+    });
+
     // Validiere Dateityp (Bilder und PDFs)
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp', 'application/pdf'];
     
-    // Zusätzliche Prüfung: Buffer Magic Number
-    const isValidImage = req.file.buffer.slice(0, 4).toString('hex').startsWith('ffd8') || // JPEG
-                        req.file.buffer.slice(0, 4).toString('hex') === '89504e47' || // PNG
-                        req.file.buffer.slice(0, 3).toString('hex') === '474946' || // GIF
-                        req.file.buffer.slice(0, 2).toString('hex') === '424d' || // BMP
-                        req.file.buffer.slice(0, 4).toString('hex') === '25504446'; // PDF (%PDF)
+    // Prüfe Magic Numbers
+    const hex = req.file.buffer.slice(0, 8).toString('hex');
+    const isJpeg = hex.startsWith('ffd8');
+    const isPng = hex.startsWith('89504e47');
+    const isGif = hex.startsWith('474946');
+    const isBmp = hex.startsWith('424d');
+    const isPdf = hex.startsWith('25504446'); // %PDF
+    const isWebp = hex.startsWith('52494646'); // RIFF (WebP)
+    
+    const isValidImage = isJpeg || isPng || isGif || isBmp || isPdf || isWebp;
     
     if (!allowedTypes.includes(req.file.mimetype) || !isValidImage) {
-      console.error(`Invalid file upload: mimetype=${req.file.mimetype}, valid=${isValidImage}`);
+      console.error(`Invalid file upload: mimetype=${req.file.mimetype}, valid=${isValidImage}, hex=${hex}`);
       return res.status(400).json({ 
         error: `Invalid file type: ${req.file.mimetype}. Only JPG, PNG, WebP, GIF, BMP, PDF allowed`,
-        details: 'Please upload a valid image or PDF file'
+        details: `File appears to be: ${isJpeg ? 'JPEG' : isPng ? 'PNG' : isPdf ? 'PDF' : isGif ? 'GIF' : isBmp ? 'BMP' : isWebp ? 'WebP' : 'Unknown/Invalid'}`
       });
+    }
+    
+    // Korrekten Mime-Type setzen basierend auf Magic Number
+    let detectedMimeType = req.file.mimetype;
+    if (isJpeg) detectedMimeType = 'image/jpeg';
+    else if (isPng) detectedMimeType = 'image/png';
+    else if (isGif) detectedMimeType = 'image/gif';
+    else if (isBmp) detectedMimeType = 'image/bmp';
+    else if (isWebp) detectedMimeType = 'image/webp';
+    else if (isPdf) detectedMimeType = 'application/pdf';
+    
+    if (detectedMimeType !== req.file.mimetype) {
+      console.log(`Mime-type corrected: ${req.file.mimetype} -> ${detectedMimeType}`);
     }
 
     // Berechne File-Hash für Duplikat-Erkennung
@@ -220,8 +246,8 @@ router.post('/', upload.single('file'), async (req, res) => {
     console.log('OCR Check - Azure available:', !!process.env.AZURE_FORM_RECOGNIZER_KEY);
     
     if (isKimiOCRAvailable()) {
-      console.log('Using Kimi Vision for OCR...');
-      ocrResult = await extractReceiptDataWithKimi(req.file.buffer, req.file.mimetype);
+      console.log('Using Kimi Vision for OCR with mimetype:', detectedMimeType);
+      ocrResult = await extractReceiptDataWithKimi(req.file.buffer, detectedMimeType);
       console.log('Kimi OCR result:', JSON.stringify(ocrResult, null, 2));
     } else if (process.env.AZURE_FORM_RECOGNIZER_KEY) {
       console.log('Using Azure OCR...');
@@ -255,7 +281,7 @@ router.post('/', upload.single('file'), async (req, res) => {
       .storage
       .from('accounting-documents')
       .upload(fileName, req.file.buffer, {
-        contentType: req.file.mimetype,
+        contentType: detectedMimeType,
       });
 
     if (uploadError) throw uploadError;
