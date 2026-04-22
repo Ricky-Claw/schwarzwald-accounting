@@ -8,7 +8,7 @@ import type { OCRResult, AmazonOCRResult, AmazonDocumentType, AmazonTransaction 
 // Azure Client nur initialisieren wenn Keys vorhanden
 let client: any = null;
 
-function getAzureClient() {
+async function getAzureClient() {
   if (client) return client;
   
   const endpoint = process.env.AZURE_FORM_RECOGNIZER_ENDPOINT;
@@ -19,11 +19,11 @@ function getAzureClient() {
   }
   
   try {
-    const { DocumentAnalysisClient, AzureKeyCredential } = require('@azure/ai-form-recognizer');
-    client = new DocumentAnalysisClient(endpoint, new AzureKeyCredential(key));
+    const azure = await import('@azure/ai-form-recognizer');
+    client = new azure.DocumentAnalysisClient(endpoint, new azure.AzureKeyCredential(key));
     return client;
-  } catch (error) {
-    console.warn('Azure Form Recognizer not available:', error);
+  } catch (_err) {
+    console.warn('Azure Form Recognizer not available:', _err);
     return null;
   }
 }
@@ -32,7 +32,7 @@ function getAzureClient() {
  * Extrahiert Daten aus einer Quittung/Rechnung
  */
 export async function extractReceiptData(fileBuffer: Buffer): Promise<OCRResult> {
-  const azureClient = getAzureClient();
+  const azureClient = await getAzureClient();
   
   if (!azureClient) {
     return { 
