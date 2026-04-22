@@ -54,8 +54,11 @@ function ExportContent() {
   async function fetchStatus() {
     setLoading(true);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://lanista-backend.onrender.com';
+    const apiKey = localStorage.getItem('apiKey') || 'lanista-secret-key-2024';
     try {
-      const response = await fetch(`${apiUrl}/api/accounting/export/status/${year}/${month}`);
+      const response = await fetch(`${apiUrl}/api/accounting/export/status/${year}/${month}`, {
+        headers: { 'x-api-key': apiKey }
+      });
       if (!response.ok) {
         console.error('Export status API error:', response.status);
         setStatus(null);
@@ -74,10 +77,11 @@ function ExportContent() {
   async function handleExport() {
     setDownloading(true);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://lanista-backend.onrender.com';
+    const apiKey = localStorage.getItem('apiKey') || 'lanista-secret-key-2024';
     try {
       const response = await fetch(`${apiUrl}/api/accounting/export`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
         body: JSON.stringify({
           year: parseInt(year),
           month: parseInt(month),

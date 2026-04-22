@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { 
   Upload, Download, CheckCircle, AlertCircle, 
   Calendar, Receipt, TrendingUp, FileText,
-  ChevronRight, LogOut
+  ChevronRight, LogOut, Trash2
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -353,7 +353,7 @@ function RecentUploadsSection() {
 
   async function fetchRecentReceipts() {
     try {
-      const apiKey = 'lanista-secret-key-2024';
+      const apiKey = localStorage.getItem('apiKey') || 'lanista-secret-key-2024';
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://lanista-backend.onrender.com';
       
       const response = await fetch(`${apiUrl}/api/accounting/receipts?limit=100`, {
@@ -370,6 +370,30 @@ function RecentUploadsSection() {
       console.error('Error:', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function deleteReceipt(receiptId: string) {
+    if (!confirm('Beleg wirklich löschen?')) return;
+    
+    try {
+      const apiKey = localStorage.getItem('apiKey') || 'lanista-secret-key-2024';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://lanista-backend.onrender.com';
+      
+      const response = await fetch(`${apiUrl}/api/accounting/receipts/${receiptId}`, {
+        method: 'DELETE',
+        headers: { 'x-api-key': apiKey }
+      });
+      
+      if (response.ok) {
+        // Refresh list
+        fetchRecentReceipts();
+      } else {
+        alert('Löschen fehlgeschlagen');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert('Löschen fehlgeschlagen');
     }
   }
 
@@ -462,18 +486,32 @@ function RecentUploadsSection() {
               {group.receipts.slice(0, 3).map((receipt) => (
                 <div 
                   key={receipt.id}
-                  onClick={() => router.push(`/dashboard/months/${receipt.receipt_date?.slice(0, 7) || '2025-04'}`)}
-                  className="flex items-center justify-between p-2 hover:bg-slate-50 rounded-lg cursor-pointer text-sm"
+                  className="flex items-center justify-between p-2 hover:bg-slate-50 rounded-lg text-sm group"
                 >
-                  <div className="flex items-center gap-2">
+                  <div 
+                    className="flex items-center gap-2 flex-1 cursor-pointer"
+                    onClick={() => router.push(`/dashboard/months/${receipt.receipt_date?.slice(0, 7) || '2025-04'}`)}
+                  >
                     <FileText className="w-4 h-4 text-slate-400" />
-                    <span className="truncate max-w-[200px]">
+                    <span className="truncate max-w-[180px]">
                       {receipt.merchant_name || 'Unbekannt'}
                     </span>
                   </div>
-                  <span className="font-medium text-slate-700">
-                    {receipt.total_amount?.toFixed(2)} €
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-slate-700">
+                      {receipt.total_amount?.toFixed(2)} €
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteReceipt(receipt.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded text-red-500 transition-opacity"
+                      title="Löschen"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               ))}
               {group.receipts.length > 3 && (

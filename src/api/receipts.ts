@@ -31,27 +31,10 @@ const upload = multer({
 
 // ============================================
 // HELPER: File Hash für Duplikat-Erkennung
+// (optional - wird nicht in DB gespeichert wenn Spalte fehlt)
 // ============================================
 function calculateFileHash(buffer: Buffer): string {
   return crypto.createHash('sha256').update(buffer).digest('hex');
-}
-
-// ============================================
-// HELPER: Duplikat-Prüfung
-// ============================================
-async function checkDuplicate(userId: string, fileHash: string): Promise<{ isDuplicate: boolean; existingReceipt?: any }> {
-  const { data, error } = await supabase
-    .from('receipts')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('file_hash', fileHash)
-    .single();
-  
-  if (error || !data) {
-    return { isDuplicate: false };
-  }
-  
-  return { isDuplicate: true, existingReceipt: data };
 }
 
 const supabase = createClient(
@@ -184,27 +167,6 @@ router.post('/', upload.single('file'), async (req, res) => {
       console.log(`Mime-type corrected: ${req.file.mimetype} -> ${detectedMimeType}`);
     }
 
-    // Berechne File-Hash für Duplikat-Erkennung
-    const fileHash = calculateFileHash(req.file.buffer);
-    console.log('File hash:', fileHash);
-
-    // Prüfe auf Duplikat
-    const duplicateCheck = await checkDuplicate(userId, fileHash);
-    if (duplicateCheck.isDuplicate) {
-      return res.status(409).json({
-        error: 'Duplicate file detected',
-        message: 'Diese Datei wurde bereits hochgeladen',
-        existingReceipt: {
-          id: duplicateCheck.existingReceipt.id,
-          file_name_display: duplicateCheck.existingReceipt.file_name_display,
-          receipt_date: duplicateCheck.existingReceipt.receipt_date,
-          total_amount: duplicateCheck.existingReceipt.total_amount,
-          created_at: duplicateCheck.existingReceipt.created_at,
-        },
-        suggestion: 'Löschen Sie die alte Datei oder wählen Sie eine andere'
-      });
-    }
-
     // Rechnungstyp aus Request (incoming=Ausgabe, outgoing=Einnahme)
     const invoiceType = req.body.invoice_type === 'outgoing' ? 'outgoing' : 'incoming';
     const manualCategory = req.body.category_id as string | undefined;
@@ -295,7 +257,7 @@ router.post('/', upload.single('file'), async (req, res) => {
         vat_amount: ocrResult.vat_amount,
         file_path: uploadData.path,
         file_name_display: displayFileName,
-        file_hash: fileHash,
+        // file_hash: fileHash, // Spalte fehlt in DB
         invoice_number: ocrResult.invoice_number,
         invoice_type: invoiceType,
         skr04_code: category?.skr04Code,
