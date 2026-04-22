@@ -22,9 +22,11 @@ async function loadModules(): Promise<void> {
   }
   
   try {
-    pdfParse = await import('pdf-parse');
-  } catch {
-    console.log('pdf-parse nicht verfügbar');
+    const pdfParseModule = await import('pdf-parse');
+    pdfParse = (pdfParseModule as any).PDFParse || pdfParseModule;
+    console.log('pdf-parse loaded:', typeof pdfParse);
+  } catch (err) {
+    console.error('pdf-parse load failed:', (err as Error).message);
   }
 }
 
