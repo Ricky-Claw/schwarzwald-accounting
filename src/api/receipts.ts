@@ -410,7 +410,6 @@ router.delete('/:id', async (req, res) => {
       .from('receipts')
       .select('file_path, bank_transaction_id')
       .eq('id', id)
-      .eq('user_id', userId)
       .single();
 
     // Delete file from storage
@@ -430,8 +429,7 @@ router.delete('/:id', async (req, res) => {
     const { error } = await supabase
       .from('receipts')
       .delete()
-      .eq('id', id)
-      .eq('user_id', userId);
+      .eq('id', id);
 
     if (error) throw error;
 
