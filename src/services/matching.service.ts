@@ -329,9 +329,9 @@ export async function getAllMonths(
     const stats = monthMap.get(month)!;
     stats.total++;
     
-    if (t.receipt_id) {
+    if (t.receipt_id || !shouldHaveReceipt(t as BankTransaction)) {
       stats.matched++;
-    } else if (shouldHaveReceipt(t as BankTransaction)) {
+    } else {
       stats.missing++;
     }
   }
