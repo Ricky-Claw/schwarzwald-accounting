@@ -60,9 +60,18 @@ export default function UploadPage() {
   const [dragActive, setDragActive] = useState(false);
   const [invoiceType, setInvoiceType] = useState<'incoming' | 'outgoing'>('incoming');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [targetInfo, setTargetInfo] = useState<{ month?: string; date?: string; amount?: string; description?: string } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const month = params.get('month') || undefined;
+    const date = params.get('date') || undefined;
+    const amount = params.get('amount') || undefined;
+    const description = params.get('description') || undefined;
+    if (month || date || amount || description) {
+      setTargetInfo({ month, date, amount, description });
+    }
     // Skip auth check for now - use hardcoded key
     // const apiKey = localStorage.getItem('apiKey');
     // if (!apiKey) {
@@ -149,7 +158,7 @@ export default function UploadPage() {
       const data = await response.json();
       
       const categories = invoiceType === 'incoming' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
-      const category = categories.find(c => c.id === data.receipt?.category_id);
+      const category = data.category || categories.find(c => c.id === data.receipt?.category_id);
 
       setFiles((prev) =>
         prev.map((f) =>
@@ -210,7 +219,7 @@ export default function UploadPage() {
       {/* Header */}
       <header className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <Link href="/dashboard" className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-2">
+          <Link href={targetInfo?.month ? `/dashboard/months/${targetInfo.month}` : '/dashboard'} className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-2">
             <ArrowLeft className="w-4 h-4" />
             Zurück zum Dashboard
           </Link>
@@ -235,6 +244,24 @@ export default function UploadPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
+        {targetInfo && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div>
+                <h2 className="font-semibold text-slate-900">Beleg für konkrete Buchung hochladen</h2>
+                <p className="text-sm text-slate-600 mt-1">
+                  {targetInfo.date && <span>{targetInfo.date}</span>}
+                  {targetInfo.amount && <span> • {Number(targetInfo.amount).toFixed(2)} €</span>}
+                  {targetInfo.description && <span> • {targetInfo.description}</span>}
+                </p>
+              </div>
+              <div className="text-sm text-emerald-700 bg-white/70 rounded-lg px-3 py-2">
+                Tipp: Wenn OCR Datum und Betrag erkennt, wird automatisch gematcht.
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Rechnungstyp & Kategorie Auswahl */}
         <div className="bg-white rounded-xl p-6 border border-slate-200 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -519,6 +546,14 @@ export default function UploadPage() {
                     {matchedCount} von {files.length} Dateien verarbeitet
                   </span>
                 </div>
+                {targetInfo?.month && (
+                  <Link
+                    href={`/dashboard/months/${targetInfo.month}`}
+                    className="inline-flex items-center justify-center mt-4 w-full bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors"
+                  >
+                    Zurück zur fehlende-Belege-Liste
+                  </Link>
+                )}
               </motion.div>
             )}
           </div>

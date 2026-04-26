@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { Download, AlertCircle, CheckCircle, FileText, Calendar, ArrowLeft, Loader2 } from 'lucide-react';
+import { Download, AlertCircle, CheckCircle, FileText, Calendar, ArrowLeft, Loader2, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
@@ -17,6 +17,7 @@ interface ExportStatus {
     totalIncome: number;
     totalExpense: number;
     missingReceipts: Array<{
+      id: string;
       date: string;
       amount: number;
       description: string;
@@ -336,13 +337,14 @@ function ExportContent() {
                       <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
                         <h4 className="font-medium text-slate-900">Fehlende Belege</h4>
                       </div>
-                      <div className="max-h-48 overflow-y-auto">
+                      <div className="max-h-72 overflow-y-auto">
                         <table className="w-full text-sm">
                           <thead className="bg-slate-50 text-slate-600">
                             <tr>
                               <th className="px-4 py-2 text-left">Datum</th>
                               <th className="px-4 py-2 text-left">Beschreibung</th>
                               <th className="px-4 py-2 text-right">Betrag</th>
+                              <th className="px-4 py-2 text-right">Aktion</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-200">
@@ -351,6 +353,15 @@ function ExportContent() {
                                 <td className="px-4 py-2 text-slate-900">{item.date}</td>
                                 <td className="px-4 py-2 text-slate-600 truncate max-w-xs">{item.description}</td>
                                 <td className="px-4 py-2 text-right font-medium text-slate-900">{item.amount.toFixed(2)} €</td>
+                                <td className="px-4 py-2 text-right">
+                                  <Link
+                                    href={`/upload?month=${year}-${month.padStart(2, '0')}&transactionId=${item.id}&date=${item.date}&amount=${item.amount}&description=${encodeURIComponent(item.description)}`}
+                                    className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-800 font-medium"
+                                  >
+                                    <Upload className="w-3 h-3" />
+                                    Hochladen
+                                  </Link>
+                                </td>
                               </tr>
                             ))}
                           </tbody>

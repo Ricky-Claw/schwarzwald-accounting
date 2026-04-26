@@ -47,6 +47,7 @@ export interface ExportSummary {
 }
 
 export interface MissingReceipt {
+  id: string;
   date: string;
   amount: number;
   description: string;
@@ -110,6 +111,7 @@ export async function generateExport(
     totalIncome: txs.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0),
     totalExpense: txs.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0),
     missingReceipts: missingReceipts.map(t => ({
+      id: t.id,
       date: t.transaction_date,
       amount: Math.abs(t.amount),
       description: t.description || t.counterparty_name || 'Unbekannt',

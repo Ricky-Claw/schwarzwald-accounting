@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
   ArrowLeft, Calendar, Receipt, CheckCircle, AlertCircle, 
-  Download, Trash2, FileText, Loader2
+  Download, Trash2, FileText, Loader2, Upload, ClipboardCheck
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -20,12 +20,30 @@ interface Receipt {
   matched: boolean;
 }
 
+interface MissingReceipt {
+  id: string;
+  date: string;
+  amount: number;
+  description: string;
+}
+
+interface ExportStatus {
+  readyForTaxOffice: boolean;
+  summary: {
+    totalTransactions: number;
+    withReceipt: number;
+    withoutReceipt: number;
+    missingReceipts: MissingReceipt[];
+  };
+}
+
 export default function MonthDetailPage() {
   const params = useParams();
   const router = useRouter();
   const month = params.month as string;
   
   const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [exportStatus, setExportStatus] = useState<ExportStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [monthName, setMonthName] = useState('');
 
@@ -54,9 +72,16 @@ export default function MonthDetailPage() {
         `${apiUrl}/api/accounting/receipts?month=${month}`,
         { headers: { 'x-api-key': apiKey } }
       );
+      const [year, monthNum] = month.split('-');
+      const statusResponse = await fetch(
+        `${apiUrl}/api/accounting/export/status/${year}/${parseInt(monthNum)}`,
+        { headers: { 'x-api-key': apiKey } }
+      );
       
       const data = await response.json();
+      const statusData = statusResponse.ok ? await statusResponse.json() : null;
       setReceipts(data.receipts || []);
+      setExportStatus(statusData);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -85,6 +110,9 @@ export default function MonthDetailPage() {
 
   const totalAmount = receipts.reduce((sum, r) => sum + (r.total_amount || 0), 0);
   const matchedCount = receipts.filter(r => r.matched).length;
+  const missingReceipts = exportStatus?.summary.missingReceipts || [];
+  const totalTransactions = exportStatus?.summary.totalTransactions || 0;
+  const readyForTaxOffice = !!exportStatus?.readyForTaxOffice;
 
   if (loading) {
     return (
@@ -125,21 +153,84 @@ export default function MonthDetailPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Tax office readiness */}
+        <div className={`rounded-2xl p-6 mb-8 border ${
+          readyForTaxOffice ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'
+        }`}>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${readyForTaxOffice ? 'bg-emerald-100' : 'bg-amber-100'}`}>
+                {readyForTaxOffice ? <ClipboardCheck className="w-6 h-6 text-emerald-700" /> : <AlertCircle className="w-6 h-6 text-amber-700" />}
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  {readyForTaxOffice ? 'Steuerberater-ready' : `${missingReceipts.length} Belege fehlen noch`}
+                </h2>
+                <p className="text-sm text-slate-600 mt-1">
+                  {readyForTaxOffice
+                    ? 'Alle relevanten Buchungen haben Belege. Export kann sauber geteilt werden.'
+                    : 'Arbeite diese Liste ab: Beleg hochladen, OCR prüfen, Export neu laden.'}
+                </p>
+              </div>
+            </div>
+            <Link
+              href={`/export?year=${month.split('-')[0]}&month=${parseInt(month.split('-')[1])}`}
+              className="inline-flex items-center justify-center gap-2 bg-slate-900 text-white px-5 py-3 rounded-xl hover:bg-slate-800 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Steuerberater-Export
+            </Link>
+          </div>
+        </div>
+
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-xl p-4 border border-slate-200">
-            <div className="text-2xl font-semibold text-slate-900">{receipts.length}</div>
-            <div className="text-sm text-slate-500">Belege gesamt</div>
+            <div className="text-2xl font-semibold text-slate-900">{totalTransactions}</div>
+            <div className="text-sm text-slate-500">Buchungen</div>
           </div>
           <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
-            <div className="text-2xl font-semibold text-emerald-700">{matchedCount}</div>
-            <div className="text-sm text-emerald-600">Zugeordnet</div>
+            <div className="text-2xl font-semibold text-emerald-700">{exportStatus?.summary.withReceipt ?? matchedCount}</div>
+            <div className="text-sm text-emerald-600">Mit Beleg</div>
+          </div>
+          <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+            <div className="text-2xl font-semibold text-amber-700">{missingReceipts.length}</div>
+            <div className="text-sm text-amber-600">Fehlend</div>
           </div>
           <div className="bg-white rounded-xl p-4 border border-slate-200">
             <div className="text-2xl font-semibold text-slate-900">{totalAmount.toFixed(2)} €</div>
             <div className="text-sm text-slate-500">Gesamtbetrag</div>
           </div>
         </div>
+
+        {/* Missing receipts first */}
+        {missingReceipts.length > 0 && (
+          <div className="bg-white rounded-xl border border-amber-200 mb-8 overflow-hidden">
+            <div className="p-4 border-b border-amber-200 bg-amber-50">
+              <h2 className="font-semibold text-slate-900 flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-amber-600" />
+                Fehlende Belege — zuerst erledigen
+              </h2>
+            </div>
+            <div className="divide-y divide-slate-200">
+              {missingReceipts.map((item) => (
+                <div key={item.id} className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <div>
+                    <div className="font-medium text-slate-900">{item.description}</div>
+                    <div className="text-sm text-slate-500">{item.date} • {item.amount.toFixed(2)} €</div>
+                  </div>
+                  <Link
+                    href={`/upload?month=${month}&transactionId=${item.id}&date=${item.date}&amount=${item.amount}&description=${encodeURIComponent(item.description)}`}
+                    className="inline-flex items-center justify-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors"
+                  >
+                    <Upload className="w-4 h-4" />
+                    passenden Beleg hochladen
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Receipts List */}
         <div className="bg-white rounded-xl border border-slate-200">
