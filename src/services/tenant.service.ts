@@ -29,7 +29,7 @@ export async function ensureDefaultTenant(): Promise<TenantContext> {
 
   if (userError) throw userError;
 
-  let { data: membership, error: membershipError } = await supabase
+  const { data: existingMembership, error: membershipError } = await supabase
     .from('accounting_memberships')
     .select('*, tenant:tenant_id(*)')
     .eq('user_id', user.id)
@@ -39,6 +39,8 @@ export async function ensureDefaultTenant(): Promise<TenantContext> {
     .maybeSingle();
 
   if (membershipError) throw membershipError;
+
+  let membership = existingMembership;
 
   if (!membership) {
     const { data: tenant, error: tenantError } = await supabase
