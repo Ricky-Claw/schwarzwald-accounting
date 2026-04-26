@@ -68,6 +68,8 @@ export default function DashboardPage() {
       const apiKey = localStorage.getItem('apiKey') || process.env.NEXT_PUBLIC_API_KEY || 'lanista-secret-key-2024';
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://lanista-backend.onrender.com';
       const headers: Record<string, string> = { 'x-api-key': apiKey };
+      const tenantId = localStorage.getItem('tenantId');
+      if (tenantId) headers['x-tenant-id'] = tenantId;
       
       const [monthsRes, statsRes, receiptsRes] = await Promise.all([
         fetch(`${apiUrl}/api/accounting/receipts/months/list`, { headers }),

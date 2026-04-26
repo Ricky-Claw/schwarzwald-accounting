@@ -8,6 +8,10 @@ const supabase = createClient(
 
 export const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000001';
 
+export function createUserApiKey(): string {
+  return `lanista_user_${crypto.randomBytes(24).toString('base64url')}`;
+}
+
 export interface TenantContext {
   userId: string;
   tenantId: string;
@@ -167,6 +171,23 @@ export async function createInvite(ctx: TenantContext, input: any) {
   return data;
 }
 
+export async function findUserByApiKey(apiKey: string) {
+  const { data, error } = await supabase
+    .from('accounting_users')
+    .select('*')
+    .eq('api_key', apiKey)
+    .single();
+
+  if (error || !data) return null;
+
+  await supabase
+    .from('accounting_users')
+    .update({ last_login_at: new Date().toISOString() })
+    .eq('id', data.id);
+
+  return data;
+}
+
 export async function acceptInvite(token: string, input: any) {
   const { data: invite, error: inviteError } = await supabase
     .from('accounting_invites')
@@ -180,9 +201,11 @@ export async function acceptInvite(token: string, input: any) {
   const email = input.email || invite.email;
   if (!email) throw new Error('email required');
 
+  const apiKey = createUserApiKey();
+
   const { data: user, error: userError } = await supabase
     .from('accounting_users')
-    .upsert({ email, display_name: input.display_name || email, first_login_completed: true }, { onConflict: 'email' })
+    .upsert({ email, display_name: input.display_name || email, first_login_completed: true, api_key: apiKey }, { onConflict: 'email' })
     .select()
     .single();
 
@@ -206,5 +229,5 @@ export async function acceptInvite(token: string, input: any) {
     .update({ status: 'accepted', accepted_by: user.id, accepted_at: new Date().toISOString() })
     .eq('id', invite.id);
 
-  return { user, tenantId: invite.tenant_id, role: invite.role };
+  return { user, tenantId: invite.tenant_id, role: invite.role, apiKey: user.api_key || apiKey };
 }

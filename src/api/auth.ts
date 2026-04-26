@@ -3,13 +3,13 @@
 // ============================================
 
 import { Router } from 'express';
-import { getTenantContext } from '../services/tenant.service.js';
+import { DEFAULT_USER_ID, findUserByApiKey, getTenantContext } from '../services/tenant.service.js';
 
 const router = Router();
 
 // Simple API key - survives server restarts!
 const API_KEY = process.env.API_KEY || 'lanista-secret-key-2024';
-const USER_ID = '00000000-0000-0000-0000-000000000001';
+const USER_ID = DEFAULT_USER_ID;
 
 // ============================================
 // GET /api/auth/key (get current API key for frontend)
@@ -54,6 +54,22 @@ export async function authMiddleware(req: any, res: any, next: any) {
       console.error('Tenant context error:', error);
     }
     return next();
+  }
+
+  if (key) {
+    const user = await findUserByApiKey(key as string);
+    if (user) {
+      req.userId = user.id;
+      req.accountingUser = user;
+      try {
+        const tenantId = req.headers['x-tenant-id'] as string | undefined;
+        req.tenantContext = await getTenantContext(user.id, tenantId);
+        req.tenantId = req.tenantContext.tenantId;
+      } catch (error) {
+        console.error('Tenant context error:', error);
+      }
+      return next();
+    }
   }
 
   res.status(401).json({ error: 'Unauthorized - Invalid API key' });
