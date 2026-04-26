@@ -20,6 +20,7 @@ interface UploadingFile {
   progress: number;
   status: 'uploading' | 'processing' | 'matched' | 'error';
   result?: {
+    receiptId?: string;
     merchant?: string;
     date?: string;
     amount?: number;
@@ -31,6 +32,7 @@ interface UploadingFile {
     reviewReason?: string;
     suggestedQuestions?: string[];
     purposeNote?: string;
+    remembered?: boolean;
   };
   error?: string;
 }
@@ -178,6 +180,7 @@ export default function UploadPage() {
                 progress: 100,
                 status: data.autoMatched ? 'matched' : 'processing',
                 result: {
+                  receiptId: data.receipt?.id,
                   merchant: data.receipt?.merchant_name,
                   date: data.receipt?.receipt_date,
                   amount: data.receipt?.total_amount,
@@ -222,6 +225,42 @@ export default function UploadPage() {
 
   const removeFile = (id: string) => {
     setFiles((prev) => prev.filter((f) => f.id !== id));
+  };
+
+  const rememberRule = async (fileId: string) => {
+    const file = files.find((f) => f.id === fileId);
+    const result = file?.result;
+    if (!result?.category || !result.skr04Code) return;
+
+    try {
+      const apiKey = localStorage.getItem('apiKey') || 'lanista-secret-key-2024';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://lanista-backend.onrender.com';
+      const response = await fetch(`${apiUrl}/api/accounting/rules`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+        body: JSON.stringify({
+          merchant_pattern: result.merchant || undefined,
+          purpose_pattern: result.purposeNote || undefined,
+          category_id: result.category.id,
+          category_name: result.category.name,
+          skr04_code: result.skr04Code,
+          vat_rate: result.category.vatRate,
+          needs_review: false,
+          reason: `Gemerkte Regel: ${result.merchant || 'Beleg'} → ${result.category.name}`,
+          source: 'manual',
+        }),
+      });
+
+      if (!response.ok) throw new Error('Rule create failed');
+
+      setFiles((prev) => prev.map((f) => f.id === fileId && f.result
+        ? { ...f, result: { ...f.result, remembered: true, needsReview: false, reviewReason: 'Gelernte Regel gespeichert. Künftige ähnliche Belege werden automatisch vorgeschlagen.' } }
+        : f
+      ));
+    } catch (error) {
+      console.error('Remember rule error:', error);
+      alert('Regel konnte nicht gespeichert werden');
+    }
   };
 
   const categories = invoiceType === 'incoming' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
@@ -573,11 +612,31 @@ export default function UploadPage() {
                                   <div className="mt-3 rounded-lg bg-white/70 p-2 text-xs text-amber-900">
                                     Steuerberater-Hinweis: Wenn die korrigierte Kategorie künftig automatisch gelten soll, als Lernregel merken lassen.
                                   </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => rememberRule(file.id)}
+                                    disabled={!file.result.category || !file.result.skr04Code || file.result.remembered}
+                                    className="mt-3 inline-flex items-center gap-2 bg-amber-600 text-white px-3 py-2 rounded-lg hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                  >
+                                    <Check className="w-4 h-4" />
+                                    {file.result.remembered ? 'Für Zukunft gemerkt' : 'Für Zukunft merken'}
+                                  </button>
                                 </div>
                               ) : file.result.reviewReason ? (
-                                <p className="mt-2 text-xs text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2">
-                                  {file.result.reviewReason}
-                                </p>
+                                <div className="mt-2 text-xs text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2">
+                                  <p>{file.result.reviewReason}</p>
+                                  {file.result.category && file.result.skr04Code && !file.result.remembered && (
+                                    <button
+                                      type="button"
+                                      onClick={() => rememberRule(file.id)}
+                                      className="mt-2 inline-flex items-center gap-1 font-medium text-emerald-800 hover:text-emerald-900"
+                                    >
+                                      <Check className="w-3 h-3" />
+                                      Für Zukunft merken
+                                    </button>
+                                  )}
+                                  {file.result.remembered && <p className="mt-2 font-medium">Für Zukunft gemerkt.</p>}
+                                </div>
                               ) : null}
                             </div>
                           )}
