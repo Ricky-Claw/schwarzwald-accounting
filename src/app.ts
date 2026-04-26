@@ -15,6 +15,7 @@ import receiptsRouter from './api/receipts.js';
 import exportRouter from './api/export.js';
 import authRouter, { authMiddleware } from './api/auth.js';
 import migrateRouter from './api/migrate.js';
+import rulesRouter from './api/rules.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -88,6 +89,7 @@ app.use('/api/accounting/statements', statementsRouter);
 app.use('/api/accounting/amazon', amazonRouter);
 app.use('/api/accounting/receipts', receiptsRouter);
 app.use('/api/accounting/export', exportRouter);
+app.use('/api/accounting/rules', rulesRouter);
 app.use('/api/migrate', migrateRouter);
 
 // TODO: Add more routes

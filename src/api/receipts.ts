@@ -19,6 +19,7 @@ import {
   getDashboardStats,
 } from '../services/matching.service.js';
 import type { Receipt } from '../types/index.js';
+import { findMatchingRule } from '../services/rules.service.js';
 
 const router = Router();
 const upload = multer({ 
@@ -184,8 +185,14 @@ router.post('/', upload.single('file'), async (req, res) => {
       };
     }
 
-    // Automatische Kategorisierung mit Unsicherheitsprüfung
-    const categoryDecision = decideCategory(ocrResult.merchant_name, purposeNote, manualCategory);
+    // Gelernte Regeln zuerst, dann automatische Kategorisierung mit Unsicherheitsprüfung
+    const learnedRule = manualCategory ? null : await findMatchingRule(
+      userId,
+      ocrResult.merchant_name,
+      purposeNote,
+      JSON.stringify(ocrResult.raw || {})
+    );
+    const categoryDecision = learnedRule?.decision || decideCategory(ocrResult.merchant_name, purposeNote, manualCategory);
     const category = categoryDecision.category;
 
     // Generiere sinnvollen Dateinamen
@@ -256,6 +263,7 @@ router.post('/', upload.single('file'), async (req, res) => {
           ...(ocrResult.raw || {}),
           purpose_note: purposeNote || undefined,
           category_decision: categoryDecision,
+          learned_rule_id: learnedRule?.rule.id,
         },
         ocr_status: ocrResult.success ? 'success' : 'error',
         bank_transaction_id: matchedTransactionId,
@@ -276,6 +284,7 @@ router.post('/', upload.single('file'), async (req, res) => {
       ocr: ocrResult,
       category: category,
       categoryDecision,
+      learnedRule: learnedRule?.rule || null,
       needsReview: categoryDecision.needsReview,
       purposeNote,
       fileName: displayFileName,
