@@ -102,11 +102,11 @@ export default function UsersPage() {
     }
   }
 
-  if (loading) return <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfdf5,_transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] p-8">Lade Benutzer...</div>;
+  if (loading) return <div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,_#dff7ea,_transparent_30%),radial-gradient(circle_at_88%_12%,_#f8e8b9,_transparent_26%),linear-gradient(180deg,#fbfaf5_0%,#eef5ef_100%)] p-8">Lade Benutzer...</div>;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfdf5,_transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)]">
-      <header className="bg-white/80 backdrop-blur-xl border-b border-white/70 shadow-sm">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,_#dff7ea,_transparent_30%),radial-gradient(circle_at_88%_12%,_#f8e8b9,_transparent_26%),linear-gradient(180deg,#fbfaf5_0%,#eef5ef_100%)]">
+      <header className="bg-[#fbfaf5]/82 backdrop-blur-xl border-b border-emerald-900/10 shadow-sm">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
             <Link href="/dashboard" className="text-sm text-slate-500 hover:text-slate-800 flex items-center gap-1 mb-2">
@@ -138,7 +138,7 @@ export default function UsersPage() {
             <button
               onClick={createInvite}
               disabled={saving}
-              className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded-lg px-4 py-2 font-medium"
+              className="bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-300 text-white rounded-lg px-4 py-2 font-medium"
             >
               {saving ? 'Erstelle...' : 'Einladung erstellen'}
             </button>

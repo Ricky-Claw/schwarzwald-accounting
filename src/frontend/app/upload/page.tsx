@@ -271,9 +271,9 @@ export default function UploadPage() {
   const matchedCount = files.filter((f) => f.result?.matched).length;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfdf5,_transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)]">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,_#dff7ea,_transparent_30%),radial-gradient(circle_at_88%_12%,_#f8e8b9,_transparent_26%),linear-gradient(180deg,#fbfaf5_0%,#eef5ef_100%)]">
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-white/70 shadow-sm">
+      <header className="sticky top-0 z-20 bg-[#fbfaf5]/82 backdrop-blur-xl border-b border-emerald-900/10 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <Link href={targetInfo?.month ? `/dashboard/months/${targetInfo.month}` : '/dashboard'} className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-2">
             <ArrowLeft className="w-4 h-4" />
@@ -445,7 +445,7 @@ export default function UploadPage() {
 
               <motion.div animate={{ y: dragActive ? -5 : 0 }} className="pointer-events-none">
                 <div className="w-16 h-16 bg-emerald-100 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-inner">
-                  <Upload className="w-8 h-8 text-emerald-600" />
+                  <Upload className="w-8 h-8 text-emerald-700" />
                 </div>
                 <h3 className="text-lg font-semibold text-slate-900 mb-2">
                   Dateien hierher ziehen
@@ -460,23 +460,23 @@ export default function UploadPage() {
             </motion.div>
 
             {/* Info Box */}
-            <div className="mt-6 bg-slate-100 rounded-xl p-5">
+            <div className="mt-6 bg-slate-100 rounded-2xl p-5">
               <h4 className="font-medium text-slate-900 mb-3">Automatische Funktionen</h4>
               <ul className="space-y-2 text-sm text-slate-600">
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-600" />
+                  <Check className="w-4 h-4 text-emerald-700" />
                   OCR erkennt Händler, Datum, Betrag
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-600" />
+                  <Check className="w-4 h-4 text-emerald-700" />
                   Datei wird automatisch umbenannt
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-600" />
+                  <Check className="w-4 h-4 text-emerald-700" />
                   SKR04-Konto wird zugewiesen
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-600" />
+                  <Check className="w-4 h-4 text-emerald-700" />
                   Matching mit Bankbuchung
                 </li>
               </ul>
@@ -495,7 +495,7 @@ export default function UploadPage() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="bg-white rounded-xl p-8 text-center border border-slate-200"
+                  className="bg-white rounded-2xl p-8 text-center border border-slate-200"
                 >
                   <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                   <p className="text-slate-500">Noch keine Dateien hochgeladen</p>
@@ -524,7 +524,7 @@ export default function UploadPage() {
                           }`}
                         >
                           {file.status === 'matched' ? (
-                            <Check className="w-5 h-5 text-emerald-600" />
+                            <Check className="w-5 h-5 text-emerald-700" />
                           ) : file.status === 'error' ? (
                             <X className="w-5 h-5 text-red-600" />
                           ) : file.status === 'uploading' ? (
@@ -593,7 +593,7 @@ export default function UploadPage() {
                                   </span>
                                 )}
                                 {file.result.matched && (
-                                  <span className="inline-flex items-center gap-1 text-emerald-600 text-xs bg-emerald-50 px-2 py-0.5 rounded-full">
+                                  <span className="inline-flex items-center gap-1 text-emerald-700 text-xs bg-emerald-50 px-2 py-0.5 rounded-full">
                                     <Check className="w-3 h-3" />
                                     Zugeordnet
                                   </span>
@@ -682,7 +682,7 @@ export default function UploadPage() {
                 className="mt-6 p-4 bg-emerald-50 rounded-lg border border-emerald-200"
               >
                 <div className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-emerald-600" />
+                  <Check className="w-5 h-5 text-emerald-700" />
                   <span className="text-emerald-800 font-medium">
                     {matchedCount} von {files.length} Dateien verarbeitet
                   </span>

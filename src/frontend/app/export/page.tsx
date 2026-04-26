@@ -28,7 +28,7 @@ interface ExportStatus {
 
 export default function ExportPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfdf5,_transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-emerald-600" /></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,_#dff7ea,_transparent_30%),radial-gradient(circle_at_88%_12%,_#f8e8b9,_transparent_26%),linear-gradient(180deg,#fbfaf5_0%,#eef5ef_100%)] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-emerald-700" /></div>}>
       <ExportContent />
     </Suspense>
   );
@@ -128,9 +128,9 @@ function ExportContent() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfdf5,_transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)]">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,_#dff7ea,_transparent_30%),radial-gradient(circle_at_88%_12%,_#f8e8b9,_transparent_26%),linear-gradient(180deg,#fbfaf5_0%,#eef5ef_100%)]">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-xl border-b border-white/70 shadow-sm">
+      <header className="bg-[#fbfaf5]/82 backdrop-blur-xl border-b border-emerald-900/10 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <Link href="/dashboard" className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-2">
             <ArrowLeft className="w-4 h-4" />
@@ -143,21 +143,21 @@ function ExportContent() {
       <motion.main initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="max-w-7xl mx-auto px-6 py-8">
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-8">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-blue-100 flex items-center justify-center flex-shrink-0">
               <Lightbulb className="w-5 h-5 text-blue-700" />
             </div>
             <div>
               <h2 className="font-semibold text-slate-900">Hinweise für Steuerberater</h2>
               <div className="mt-3 grid gap-3 md:grid-cols-3 text-sm text-slate-700">
-                <div className="bg-white/70 rounded-xl p-3">
+                <div className="bg-white/70 rounded-2xl p-3">
                   <div className="font-medium text-slate-900 mb-1">1. OCR ist Vorschlag</div>
                   Belege werden automatisch gelesen und SKR04-Kategorien vorgeschlagen. Gelbe Hinweise bedeuten: bitte fachlich prüfen.
                 </div>
-                <div className="bg-white/70 rounded-xl p-3">
+                <div className="bg-white/70 rounded-2xl p-3">
                   <div className="font-medium text-slate-900 mb-1">2. Anmerkungen nutzen</div>
                   Bei fehlendem Kontext bitte Kommentar hinterlassen, z.B. Anlass, Teilnehmer, Arbeitskleidung oder gemischter Warenkorb.
                 </div>
-                <div className="bg-white/70 rounded-xl p-3">
+                <div className="bg-white/70 rounded-2xl p-3">
                   <div className="font-medium text-slate-900 mb-1">3. Für Zukunft merken</div>
                   Wiederkehrende Korrekturen sollen künftig als Lernregel gespeichert werden, z.B. Händler → Kategorie/SKR04.
                 </div>
@@ -176,7 +176,7 @@ function ExportContent() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-xl p-6 shadow-sm border border-slate-200"
+              className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200"
             >
               <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-slate-500" />
@@ -216,7 +216,7 @@ function ExportContent() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="bg-white rounded-xl p-6 shadow-sm border border-slate-200"
+              className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200"
             >
               <h2 className="text-lg font-semibold text-slate-900 mb-4">Format</h2>
               <div className="space-y-3">
@@ -228,7 +228,7 @@ function ExportContent() {
                       : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
-                  <FileText className={`w-6 h-6 ${format === 'csv' ? 'text-emerald-600' : 'text-slate-500'}`} />
+                  <FileText className={`w-6 h-6 ${format === 'csv' ? 'text-emerald-700' : 'text-slate-500'}`} />
                   <div className="text-left">
                     <div className="font-medium text-slate-900">CSV</div>
                     <div className="text-sm text-slate-500">Für Excel</div>
@@ -242,7 +242,7 @@ function ExportContent() {
                       : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
-                  <FileText className={`w-6 h-6 ${format === 'datev' ? 'text-emerald-600' : 'text-slate-500'}`} />
+                  <FileText className={`w-6 h-6 ${format === 'datev' ? 'text-emerald-700' : 'text-slate-500'}`} />
                   <div className="text-left">
                     <div className="font-medium text-slate-900">DATEV</div>
                     <div className="text-sm text-slate-500">Für Steuerbüro</div>
@@ -256,7 +256,7 @@ function ExportContent() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-white rounded-xl p-6 shadow-sm border border-slate-200"
+              className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200"
             >
               <h2 className="text-lg font-semibold text-slate-900 mb-4">Optionen</h2>
               
@@ -302,7 +302,7 @@ function ExportContent() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 h-full"
+              className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 h-full"
             >
               <h2 className="text-lg font-semibold text-slate-900 mb-6">Vorschau</h2>
 
@@ -322,7 +322,7 @@ function ExportContent() {
                   }`}>
                     <div className="flex items-center gap-3">
                       {status.readyForTaxOffice ? (
-                        <CheckCircle className="w-6 h-6 text-emerald-600" />
+                        <CheckCircle className="w-6 h-6 text-emerald-700" />
                       ) : (
                         <AlertCircle className="w-6 h-6 text-amber-600" />
                       )}

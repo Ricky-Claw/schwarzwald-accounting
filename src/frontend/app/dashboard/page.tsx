@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { 
   Upload, Download, CheckCircle, AlertCircle, 
   Calendar, Receipt, TrendingUp, FileText,
-  ChevronRight, LogOut, Trash2, Users, BookOpen, Building2, Sparkles
+  ChevronRight, LogOut, Trash2, Users, BookOpen, Building2
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -108,148 +108,91 @@ export default function DashboardPage() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfdf5,_transparent_32%),linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)]">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,_#dff7ea,_transparent_30%),radial-gradient(circle_at_88%_12%,_#f8e8b9,_transparent_26%),linear-gradient(180deg,#fbfaf5_0%,#eef5ef_100%)]">
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-white/70 shadow-sm">
+      <header className="sticky top-0 z-20 bg-[#fbfaf5]/82 backdrop-blur-xl border-b border-emerald-900/10 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="inline-flex items-center gap-2 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full mb-2"><Sparkles className="w-3.5 h-3.5" /> Beta ready</div>
-              <h1 className="text-2xl font-semibold text-slate-950 tracking-tight">Lanista Buchhaltung</h1>
-              <p className="text-slate-500 text-sm">Belege, Regeln, Export — alles an einem Ort.</p>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-700 to-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-900/10">
+                <Receipt className="w-5 h-5" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-semibold text-slate-950 tracking-tight">Lanista Buchhaltung</h1>
+                <p className="text-slate-500 text-sm">Belege prüfen, Regeln lernen, Export vorbereiten.</p>
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-lg">
-              <CheckCircle className="w-5 h-5" />
-              <span className="text-sm font-medium">System aktiv</span>
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex items-center gap-2 text-emerald-700 bg-emerald-50/90 border border-emerald-100 px-4 py-2 rounded-full">
+                <CheckCircle className="w-5 h-5" />
+                <span className="text-sm font-medium">System aktiv</span>
+              </div>
+              <button
+                onClick={() => {
+                  localStorage.removeItem('apiKey');
+                  router.push('/login');
+                }}
+                className="flex items-center gap-2 text-slate-500 hover:text-red-600 px-4 py-2 rounded-full hover:bg-red-50 transition-colors"
+              >
+                <LogOut className="w-5 h-5" />
+                <span className="text-sm font-medium">Abmelden</span>
+              </button>
             </div>
-            <button
-              onClick={() => {
-                localStorage.removeItem('apiKey');
-                router.push('/login');
-              }}
-              className="flex items-center gap-2 text-slate-500 hover:text-red-600 px-4 py-2 rounded-lg hover:bg-red-50 transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-              <span className="text-sm font-medium">Abmelden</span>
-            </button>
           </div>
         </div>
       </header>
 
       <motion.main initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="max-w-7xl mx-auto px-6 py-8">
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
-          <Link href="/upload">
-            <motion.div
-              whileHover={{ y: -4, scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-              className="group relative overflow-hidden bg-white/85 rounded-2xl p-6 shadow-sm border border-white/80 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-950/5 transition-all cursor-pointer"
-            >
-              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-300 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
-                  <Upload className="w-6 h-6 text-emerald-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-slate-900">Dokumente hochladen</h3>
-                  <p className="text-slate-500 text-sm">Belege & Kontoauszüge</p>
-                </div>
-              </div>
-            </motion.div>
-          </Link>
-
-          <Link href="/export">
-            <motion.div
-              whileHover={{ y: -4, scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-              className="group relative overflow-hidden bg-white/85 rounded-2xl p-6 shadow-sm border border-white/80 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-950/5 transition-all cursor-pointer"
-            >
-              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-300 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center">
-                  <Download className="w-6 h-6 text-slate-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-slate-900">Exportieren</h3>
-                  <p className="text-slate-500 text-sm">DATEV oder CSV Format</p>
-                </div>
-              </div>
-            </motion.div>
-          </Link>
-
-          <Link href="/users">
-            <motion.div
-              whileHover={{ y: -4, scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-              className="group relative overflow-hidden bg-white/85 rounded-2xl p-6 shadow-sm border border-white/80 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-950/5 transition-all cursor-pointer"
-            >
-              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-300 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Users className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-slate-900">Benutzer</h3>
-                  <p className="text-slate-500 text-sm">Steuerberater einladen</p>
-                </div>
-              </div>
-            </motion.div>
-          </Link>
-
-          <Link href="/rules">
-            <motion.div whileHover={{ y: -4, scale: 1.01 }} whileTap={{ scale: 0.98 }} className="group relative overflow-hidden bg-white/85 rounded-2xl p-6 shadow-sm border border-white/80 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-950/5 transition-all cursor-pointer">
-              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-300 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="flex items-center gap-4"><div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center"><BookOpen className="w-6 h-6 text-amber-600" /></div><div><h3 className="font-semibold text-slate-900">Regeln</h3><p className="text-slate-500 text-sm">Merken & prüfen</p></div></div>
-            </motion.div>
-          </Link>
-
-          <Link href="/settings">
-            <motion.div whileHover={{ y: -4, scale: 1.01 }} whileTap={{ scale: 0.98 }} className="group relative overflow-hidden bg-white/85 rounded-2xl p-6 shadow-sm border border-white/80 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-950/5 transition-all cursor-pointer">
-              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-300 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="flex items-center gap-4"><div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center"><Building2 className="w-6 h-6 text-purple-600" /></div><div><h3 className="font-semibold text-slate-900">Firma</h3><p className="text-slate-500 text-sm">Stammdaten</p></div></div>
-            </motion.div>
-          </Link>
-
-          <div className="bg-white/80 rounded-2xl p-6 shadow-sm border border-white/80">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-slate-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-slate-900">{completionRate}%</h3>
-                <p className="text-slate-500 text-sm">Belege zugeordnet</p>
+        <section className="grid grid-cols-1 xl:grid-cols-[1.35fr_0.65fr] gap-6 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+            className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-gradient-to-br from-emerald-950 via-emerald-800 to-[#7a5b12] p-8 text-white shadow-2xl shadow-emerald-950/15"
+          >
+            <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-gold-300/20 blur-3xl" />
+            <div className="absolute right-10 bottom-8 h-28 w-28 rounded-full border border-white/10" />
+            <div className="relative z-10 max-w-2xl">
+              <p className="text-sm font-medium text-emerald-100/85 mb-3">Aktueller Arbeitsstand</p>
+              <h2 className="text-4xl font-semibold tracking-tight mb-3">{stats?.missingReceipts ? `${stats.missingReceipts} Belege fehlen noch` : 'Alles bereit für den Export'}</h2>
+              <p className="text-emerald-50/80 leading-relaxed mb-7">Der schnellste Weg: fehlende Belege hochladen, Regeln prüfen, danach DATEV/CSV exportieren.</p>
+              <div className="flex flex-wrap gap-3">
+                <Link href="/upload" className="inline-flex items-center gap-2 rounded-full bg-white text-emerald-900 px-5 py-3 text-sm font-semibold shadow-lg hover:-translate-y-0.5 hover:shadow-xl transition-all">
+                  <Upload className="w-4 h-4" /> Beleg hochladen
+                </Link>
+                <Link href="/export" className="inline-flex items-center gap-2 rounded-full bg-white/12 text-white border border-white/20 px-5 py-3 text-sm font-semibold hover:bg-white/18 transition-all">
+                  <Download className="w-4 h-4" /> Export öffnen
+                </Link>
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
 
-        {/* Stats Overview */}
-        {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <StatCard 
-              icon={<Receipt className="w-5 h-5" />}
-              label="Belege gesamt"
-              value={stats.totalReceipts}
-            />
-            <StatCard 
-              icon={<CheckCircle className="w-5 h-5" />}
-              label="Zugeordnet"
-              value={stats.matchedTransactions}
-              variant="success"
-            />
-            <StatCard 
-              icon={<AlertCircle className="w-5 h-5" />}
-              label="Fehlend"
-              value={stats.missingReceipts}
-              variant={stats.missingReceipts > 0 ? "warning" : "default"}
-            />
-            <StatCard 
-              icon={<FileText className="w-5 h-5" />}
-              label="Buchungen"
-              value={stats.totalTransactions}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <StatCard icon={<Receipt className="w-5 h-5" />} label="Belege" value={stats?.totalReceipts || 0} />
+            <StatCard icon={<FileText className="w-5 h-5" />} label="Buchungen" value={stats?.totalTransactions || 0} />
+            <StatCard icon={<CheckCircle className="w-5 h-5" />} label="Zugeordnet" value={stats?.matchedTransactions || 0} variant="success" />
+            <StatCard icon={<AlertCircle className="w-5 h-5" />} label="Fehlend" value={stats?.missingReceipts || 0} variant={(stats?.missingReceipts || 0) > 0 ? 'warning' : 'default'} />
           </div>
-        )}
+        </section>
+
+        <section className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-950">Arbeitsbereiche</h2>
+              <p className="text-sm text-slate-500">Alles Nötige, in der Reihenfolge des Buchhaltungsflusses.</p>
+            </div>
+            <div className="hidden md:flex items-center gap-2 text-sm text-slate-500">
+              <TrendingUp className="w-4 h-4 text-emerald-700" /> {completionRate}% zugeordnet
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <ActionCard href="/upload" icon={<Upload className="w-5 h-5" />} title="Upload" text="Belege & Kontoauszüge" tone="emerald" index={0} />
+            <ActionCard href="/rules" icon={<BookOpen className="w-5 h-5" />} title="Regeln" text="Merken & prüfen" tone="gold" index={1} />
+            <ActionCard href="/export" icon={<Download className="w-5 h-5" />} title="Export" text="DATEV oder CSV" tone="slate" index={2} />
+            <ActionCard href="/users" icon={<Users className="w-5 h-5" />} title="Benutzer" text="Steuerberater" tone="emerald" index={3} />
+            <ActionCard href="/settings" icon={<Building2 className="w-5 h-5" />} title="Firma" text="Stammdaten" tone="gold" index={4} />
+          </div>
+        </section>
 
         {/* Time-based Recent Uploads */}
         <RecentUploadsSection />
@@ -272,6 +215,44 @@ export default function DashboardPage() {
   );
 }
 
+function ActionCard({ href, icon, title, text, tone, index }: {
+  href: string;
+  icon: React.ReactNode;
+  title: string;
+  text: string;
+  tone: 'emerald' | 'gold' | 'slate';
+  index: number;
+}) {
+  const tones = {
+    emerald: 'from-emerald-50 to-white text-emerald-800 border-emerald-100 group-hover:border-emerald-200',
+    gold: 'from-amber-50 to-white text-amber-800 border-amber-100 group-hover:border-amber-200',
+    slate: 'from-slate-50 to-white text-slate-700 border-slate-100 group-hover:border-slate-200',
+  };
+  return (
+    <Link href={href}>
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.04 }}
+        whileHover={{ y: -5, scale: 1.015 }}
+        whileTap={{ scale: 0.98 }}
+        className={`group h-full rounded-3xl bg-gradient-to-br ${tones[tone]} border p-5 shadow-sm hover:shadow-xl hover:shadow-emerald-950/5 transition-all cursor-pointer`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-white/80 shadow-inner flex items-center justify-center">
+            {icon}
+          </div>
+          <ChevronRight className="w-4 h-4 opacity-35 group-hover:opacity-80 group-hover:translate-x-0.5 transition-all" />
+        </div>
+        <div className="mt-5">
+          <h3 className="font-semibold text-slate-950">{title}</h3>
+          <p className="text-sm text-slate-500 mt-1">{text}</p>
+        </div>
+      </motion.div>
+    </Link>
+  );
+}
+
 function StatCard({ 
   icon, 
   label, 
@@ -284,18 +265,18 @@ function StatCard({
   variant?: 'default' | 'success' | 'warning';
 }) {
   const variantStyles = {
-    default: 'bg-white border-slate-200',
-    success: 'bg-emerald-50 border-emerald-200',
-    warning: 'bg-amber-50 border-amber-200',
+    default: 'bg-white/80 border-white/80',
+    success: 'bg-emerald-50/90 border-emerald-200/80',
+    warning: 'bg-amber-50/95 border-amber-200/90',
   };
 
   return (
-    <div className={`rounded-2xl p-4 border shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all ${variantStyles[variant]}`}>
+    <div className={`rounded-3xl p-5 border shadow-sm hover:-translate-y-0.5 hover:shadow-lg transition-all ${variantStyles[variant]}`}>
       <div className="flex items-center gap-3">
         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-          variant === 'success' ? 'bg-emerald-100 text-emerald-600' :
-          variant === 'warning' ? 'bg-amber-100 text-amber-600' :
-          'bg-slate-100 text-slate-600'
+          variant === 'success' ? 'bg-emerald-100 text-emerald-700' :
+          variant === 'warning' ? 'bg-amber-100 text-amber-700' :
+          'bg-stone-100 text-stone-600'
         }`}>
           {icon}
         </div>
@@ -369,7 +350,7 @@ function MonthCard({ month, index }: { month: MonthStatus; index: number }) {
       {month.status !== 'empty' && (
         <Link 
           href={`/export?year=${month.month.split('-')[0]}&month=${month.month.split('-')[1]}`}
-          className="mt-4 flex items-center justify-center gap-2 bg-white hover:bg-slate-50 rounded-lg py-2 text-sm font-medium text-slate-700 transition-colors border border-slate-200"
+          className="mt-4 flex items-center justify-center gap-2 bg-white hover:bg-emerald-50/60 rounded-lg py-2 text-sm font-medium text-slate-700 transition-colors border border-slate-200"
         >
           <Download className="w-4 h-4" />
           Exportieren
@@ -490,7 +471,7 @@ function RecentUploadsSection() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl p-6 border border-slate-200">
+      <div className="bg-white/85 rounded-3xl p-6 border border-white/80 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900 mb-4">Neueste Uploads</h2>
         <div className="animate-pulse space-y-3">
           {[1, 2, 3].map(i => (
@@ -506,7 +487,7 @@ function RecentUploadsSection() {
   }
 
   return (
-    <div className="bg-white rounded-xl p-6 border border-slate-200">
+    <div className="bg-white/85 rounded-3xl p-6 border border-white/80 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
         <Receipt className="w-5 h-5 text-slate-500" />
         Neueste Uploads
@@ -514,7 +495,7 @@ function RecentUploadsSection() {
       
       <div className="space-y-4">
         {timeGroups.slice(0, 6).map((group) => (
-          <div key={group.label} className="border-l-4 border-emerald-400 pl-4">
+          <div key={group.label} className="border-l-4 border-amber-300 pl-4">
             <h3 className="font-medium text-slate-900 mb-2 flex items-center gap-2">
               {group.label}
               <span className="text-sm text-slate-500 font-normal">
@@ -525,7 +506,7 @@ function RecentUploadsSection() {
               {group.receipts.slice(0, 3).map((receipt) => (
                 <div 
                   key={receipt.id}
-                  className="flex items-center justify-between p-2 hover:bg-slate-50 rounded-lg text-sm group"
+                  className="flex items-center justify-between p-2 hover:bg-emerald-50/60 rounded-lg text-sm group"
                 >
                   <div 
                     className="flex items-center gap-2 flex-1 cursor-pointer"

@@ -95,10 +95,10 @@ export default function RulesPage() {
     setForm((f) => ({ ...f, category_name: name, skr04_code: code }));
   }
 
-  if (loading) return <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfdf5,_transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] p-8">Lade Regeln...</div>;
+  if (loading) return <div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,_#dff7ea,_transparent_30%),radial-gradient(circle_at_88%_12%,_#f8e8b9,_transparent_26%),linear-gradient(180deg,#fbfaf5_0%,#eef5ef_100%)] p-8">Lade Regeln...</div>;
 
-  return <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfdf5,_transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)]">
-    <header className="bg-white/80 backdrop-blur-xl border-b border-white/70 shadow-sm">
+  return <div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,_#dff7ea,_transparent_30%),radial-gradient(circle_at_88%_12%,_#f8e8b9,_transparent_26%),linear-gradient(180deg,#fbfaf5_0%,#eef5ef_100%)]">
+    <header className="bg-[#fbfaf5]/82 backdrop-blur-xl border-b border-emerald-900/10 shadow-sm">
       <div className="max-w-5xl mx-auto px-6 py-4">
         <Link href="/dashboard" className="text-sm text-slate-500 hover:text-slate-800 flex items-center gap-1 mb-2"><ArrowLeft className="w-4 h-4" /> Zurück</Link>
         <h1 className="text-2xl font-semibold text-slate-900 flex items-center gap-2"><BookOpen className="w-6 h-6" /> Gelernte Regeln</h1>
@@ -118,7 +118,7 @@ export default function RulesPage() {
           </select>
           <label className="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={form.needs_review} onChange={e=>setForm({...form, needs_review:e.target.checked})} /> immer prüfen</label>
         </div>
-        <button onClick={createRule} disabled={saving || (!form.merchant_pattern && !form.purpose_pattern && !form.keyword_pattern)} className="mt-4 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded-lg px-4 py-2 font-medium"><Save className="w-4 h-4" /> {saving ? 'Speichert...' : 'Regel speichern'}</button>
+        <button onClick={createRule} disabled={saving || (!form.merchant_pattern && !form.purpose_pattern && !form.keyword_pattern)} className="mt-4 inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-300 text-white rounded-lg px-4 py-2 font-medium"><Save className="w-4 h-4" /> {saving ? 'Speichert...' : 'Regel speichern'}</button>
       </section>
       <section className="bg-white/85 rounded-2xl border border-white/80 shadow-sm p-6">
         <h2 className="font-semibold text-slate-900 mb-4">Aktive Regeln</h2>

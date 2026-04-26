@@ -45,10 +45,10 @@ export default function SettingsPage() {
     finally { setSaving(false); }
   }
 
-  if (!tenant) return <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfdf5,_transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] p-8">Lade Firmendaten...</div>;
+  if (!tenant) return <div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,_#dff7ea,_transparent_30%),radial-gradient(circle_at_88%_12%,_#f8e8b9,_transparent_26%),linear-gradient(180deg,#fbfaf5_0%,#eef5ef_100%)] p-8">Lade Firmendaten...</div>;
 
-  return <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfdf5,_transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)]">
-    <header className="bg-white/80 backdrop-blur-xl border-b border-white/70 shadow-sm"><div className="max-w-4xl mx-auto px-6 py-4">
+  return <div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,_#dff7ea,_transparent_30%),radial-gradient(circle_at_88%_12%,_#f8e8b9,_transparent_26%),linear-gradient(180deg,#fbfaf5_0%,#eef5ef_100%)]">
+    <header className="bg-[#fbfaf5]/82 backdrop-blur-xl border-b border-emerald-900/10 shadow-sm"><div className="max-w-4xl mx-auto px-6 py-4">
       <Link href="/dashboard" className="text-sm text-slate-500 hover:text-slate-800 flex items-center gap-1 mb-2"><ArrowLeft className="w-4 h-4" /> Zurück</Link>
       <h1 className="text-2xl font-semibold text-slate-900 flex items-center gap-2"><Building2 className="w-6 h-6" /> Firmendaten</h1>
       <p className="text-sm text-slate-500">Nur die Daten, die Steuerberater und Export später brauchen.</p>
@@ -65,7 +65,7 @@ export default function SettingsPage() {
           <label className="text-sm font-medium text-slate-700 md:col-span-2">Adresse<textarea value={tenant.address || ''} onChange={e=>setTenant({...tenant, address:e.target.value})} className="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2" rows={3} /></label>
           <label className="text-sm font-medium text-slate-700">Wirtschaftsjahr startet im Monat<input type="number" min="1" max="12" value={tenant.fiscal_year_start_month || 1} onChange={e=>setTenant({...tenant, fiscal_year_start_month:Number(e.target.value)})} className="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2" /></label>
         </div>
-        <button onClick={save} disabled={saving} className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded-lg px-4 py-2 font-medium"><Save className="w-4 h-4" /> {saving ? 'Speichert...' : 'Speichern'}</button>
+        <button onClick={save} disabled={saving} className="inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-300 text-white rounded-lg px-4 py-2 font-medium"><Save className="w-4 h-4" /> {saving ? 'Speichert...' : 'Speichern'}</button>
       </section>
     </motion.main>
   </div>;
