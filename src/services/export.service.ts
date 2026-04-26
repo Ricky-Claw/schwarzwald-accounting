@@ -205,7 +205,7 @@ function generateDATEV(
   
   return {
     success: true,
-    fileName: `DATEV_${year}_${String(month).padStart(2, '0')}.csv`,
+    fileName: `Lanista_Ecom_UG_DATEV_${year}_${String(month).padStart(2, '0')}.csv`,
     content,
     contentType: 'text/csv; charset=utf-8',
     summary,
@@ -268,7 +268,7 @@ function generateCSV(
   
   return {
     success: true,
-    fileName: `Buchungen_${year}_${String(month).padStart(2, '0')}.csv`,
+    fileName: `Lanista_Ecom_UG_Buchungen_${year}_${String(month).padStart(2, '0')}.csv`,
     content: lines.join('\n'),
     contentType: 'text/csv; charset=utf-8',
     summary,

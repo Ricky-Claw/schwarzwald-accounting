@@ -104,7 +104,7 @@ function ExportContent() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Buchungen_${year}_${month.padStart(2, '0')}.${format === 'csv' ? 'csv' : 'txt'}`;
+      a.download = `Lanista_Ecom_UG_${format === 'datev' ? 'DATEV' : 'Buchungen'}_${year}_${month.padStart(2, '0')}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
