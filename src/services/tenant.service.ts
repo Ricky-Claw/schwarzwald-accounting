@@ -140,6 +140,34 @@ export async function listTenants(userId: string) {
   return data || [];
 }
 
+export async function listTenantMembers(ctx: TenantContext) {
+  if (!ctx.canManageUsers) throw new Error('Missing permission: manage users');
+
+  const { data, error } = await supabase
+    .from('accounting_memberships')
+    .select('*, user:user_id(email, display_name, last_login_at, created_at)')
+    .eq('tenant_id', ctx.tenantId)
+    .eq('active', true)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function listOpenInvites(ctx: TenantContext) {
+  if (!ctx.canManageUsers) throw new Error('Missing permission: manage users');
+
+  const { data, error } = await supabase
+    .from('accounting_invites')
+    .select('*')
+    .eq('tenant_id', ctx.tenantId)
+    .eq('status', 'open')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
 export async function createInvite(ctx: TenantContext, input: any) {
   if (!ctx.canManageUsers) throw new Error('Missing permission: manage users');
 

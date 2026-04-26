@@ -26,6 +26,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.get('/documents', async (req, res) => {
   try {
     const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { type, status, limit = 50 } = req.query;
@@ -33,7 +34,7 @@ router.get('/documents', async (req, res) => {
     let query = supabase
       .from('amazon_documents')
       .select('*')
-      .eq('user_id', userId)
+      .eq(tenantId ? 'tenant_id' : 'user_id', tenantId || userId)
       .order('created_at', { ascending: false })
       .limit(parseInt(limit as string));
 
@@ -57,6 +58,7 @@ router.get('/documents', async (req, res) => {
 router.get('/documents/:id', async (req, res) => {
   try {
     const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
     const { id } = req.params;
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -65,7 +67,7 @@ router.get('/documents/:id', async (req, res) => {
       .from('amazon_documents')
       .select('*')
       .eq('id', id)
-      .eq('user_id', userId)
+      .eq(tenantId ? 'tenant_id' : 'user_id', tenantId || userId)
       .single();
 
     if (error) throw error;
@@ -84,6 +86,7 @@ router.get('/documents/:id', async (req, res) => {
 router.post('/documents', upload.single('file'), async (req, res) => {
   try {
     const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     if (!req.file) {
@@ -112,6 +115,7 @@ router.post('/documents', upload.single('file'), async (req, res) => {
       .from('amazon_documents')
       .insert({
         user_id: userId,
+        tenant_id: tenantId,
         document_type,
         file_path: uploadData.path,
         file_name: req.file.originalname,
@@ -123,7 +127,7 @@ router.post('/documents', upload.single('file'), async (req, res) => {
     if (dbError) throw dbError;
 
     // Start async processing
-    processAmazonDocumentAsync(document.id, req.file.buffer, document_type, userId);
+    processAmazonDocumentAsync(document.id, req.file.buffer, document_type, userId, tenantId);
 
     res.status(201).json({ 
       document,
@@ -142,6 +146,7 @@ router.post('/documents', upload.single('file'), async (req, res) => {
 router.post('/documents/:id/reprocess', async (req, res) => {
   try {
     const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
     const { id } = req.params;
     const { document_type } = req.body;
 
@@ -153,7 +158,7 @@ router.post('/documents/:id/reprocess', async (req, res) => {
       .from('amazon_documents')
       .select('*')
       .eq('id', id)
-      .eq('user_id', userId)
+      .eq(tenantId ? 'tenant_id' : 'user_id', tenantId || userId)
       .single();
 
     if (fetchError) throw fetchError;
@@ -179,7 +184,7 @@ router.post('/documents/:id/reprocess', async (req, res) => {
       .eq('id', id);
 
     // Reprocess
-    processAmazonDocumentAsync(id, buffer, document_type, userId);
+    processAmazonDocumentAsync(id, buffer, document_type, userId, tenantId);
 
     res.json({ message: 'Reprocessing started' });
   } catch (error) {
@@ -194,6 +199,7 @@ router.post('/documents/:id/reprocess', async (req, res) => {
 router.delete('/documents/:id', async (req, res) => {
   try {
     const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
     const { id } = req.params;
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -203,7 +209,7 @@ router.delete('/documents/:id', async (req, res) => {
       .from('amazon_documents')
       .select('file_path')
       .eq('id', id)
-      .eq('user_id', userId)
+      .eq(tenantId ? 'tenant_id' : 'user_id', tenantId || userId)
       .single();
 
     // Delete file from storage
@@ -216,7 +222,7 @@ router.delete('/documents/:id', async (req, res) => {
       .from('amazon_documents')
       .delete()
       .eq('id', id)
-      .eq('user_id', userId);
+      .eq(tenantId ? 'tenant_id' : 'user_id', tenantId || userId);
 
     if (error) throw error;
 
@@ -234,6 +240,7 @@ router.delete('/documents/:id', async (req, res) => {
 router.get('/summary', async (req, res) => {
   try {
     const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { period_start, period_end } = req.query;
@@ -242,7 +249,7 @@ router.get('/summary', async (req, res) => {
     let query = supabase
       .from('amazon_documents')
       .select('*')
-      .eq('user_id', userId)
+      .eq(tenantId ? 'tenant_id' : 'user_id', tenantId || userId)
       .eq('status', 'success');
 
     if (period_start) query = query.gte('created_at', period_start);
@@ -294,7 +301,8 @@ async function processAmazonDocumentAsync(
   documentId: string,
   fileBuffer: Buffer,
   documentType: string,
-  userId: string
+  userId: string,
+  tenantId?: string
 ) {
   try {
     // Update status to processing
@@ -338,7 +346,7 @@ async function processAmazonDocumentAsync(
 
     // Optionally: Create transactions from Amazon data
     if (result.transactions && result.transactions.length > 0) {
-      await createTransactionsFromAmazon(documentId, result, userId);
+      await createTransactionsFromAmazon(documentId, result, userId, tenantId);
     }
 
   } catch (error) {
@@ -356,12 +364,14 @@ async function processAmazonDocumentAsync(
 async function createTransactionsFromAmazon(
   documentId: string,
   data: any,
-  userId: string
+  userId: string,
+  tenantId?: string
 ) {
   try {
     // Create bank transactions from Amazon transactions
     const transactions = data.transactions.map((t: any) => ({
       user_id: userId,
+      tenant_id: tenantId,
       transaction_date: t.date,
       amount: t.net_amount,
       currency: data.currency || 'EUR',

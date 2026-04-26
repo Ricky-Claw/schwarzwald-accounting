@@ -22,13 +22,14 @@ const supabase = createClient(
 router.get('/', async (req, res) => {
   try {
     const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('bank_statements')
-      .select('*')
-      .eq('user_id', userId)
-      .order('statement_date', { ascending: false });
+      .select('*');
+    query = tenantId ? query.eq('tenant_id', tenantId) : query.eq('user_id', userId);
+    const { data, error } = await query.order('statement_date', { ascending: false });
 
     if (error) throw error;
 
@@ -45,18 +46,19 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
     const { id } = req.params;
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     // Get statement with transactions
     const [statementResult, transactionsResult] = await Promise.all([
-      supabase.from('bank_statements').select('*').eq('id', id).eq('user_id', userId).single(),
+      supabase.from('bank_statements').select('*').eq('id', id).eq(tenantId ? 'tenant_id' : 'user_id', tenantId || userId).single(),
       supabase
         .from('bank_transactions')
         .select('*, category:category_id(*)')
         .eq('statement_id', id)
-        .eq('user_id', userId)
+        .eq(tenantId ? 'tenant_id' : 'user_id', tenantId || userId)
         .order('transaction_date', { ascending: false }),
     ]);
 
@@ -80,6 +82,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { account_name, account_iban, statement_date } = req.body as UploadStatementRequest;
@@ -94,6 +97,7 @@ router.post('/', async (req, res) => {
       .from('bank_statements')
       .insert({
         user_id: userId,
+        tenant_id: tenantId,
         account_name,
         account_iban,
         statement_date,
@@ -107,7 +111,7 @@ router.post('/', async (req, res) => {
     if (error) throw error;
 
     // Start async processing
-    processStatementAsync(statement.id, filePath, fileType, userId);
+    processStatementAsync(statement.id, filePath, fileType, userId, tenantId);
 
     res.status(201).json({ statement });
   } catch (error) {
@@ -122,6 +126,7 @@ router.post('/', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
     const { id } = req.params;
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -131,7 +136,7 @@ router.delete('/:id', async (req, res) => {
       .from('bank_statements')
       .select('file_path')
       .eq('id', id)
-      .eq('user_id', userId)
+      .eq(tenantId ? 'tenant_id' : 'user_id', tenantId || userId)
       .single();
 
     if (statement?.file_path) {
@@ -143,7 +148,7 @@ router.delete('/:id', async (req, res) => {
       .from('bank_statements')
       .delete()
       .eq('id', id)
-      .eq('user_id', userId);
+      .eq(tenantId ? 'tenant_id' : 'user_id', tenantId || userId);
 
     if (error) throw error;
 
@@ -161,6 +166,7 @@ router.delete('/:id', async (req, res) => {
 router.patch('/transactions/:id', async (req, res) => {
   try {
     const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
     const { id } = req.params;
     const { notes } = req.body;
 
@@ -170,7 +176,7 @@ router.patch('/transactions/:id', async (req, res) => {
       .from('bank_transactions')
       .update({ notes, updated_at: new Date().toISOString() })
       .eq('id', id)
-      .eq('user_id', userId)
+      .eq(tenantId ? 'tenant_id' : 'user_id', tenantId || userId)
       .select()
       .single();
 
@@ -191,7 +197,8 @@ async function processStatementAsync(
   statementId: string,
   filePath: string,
   fileType: 'pdf' | 'csv' | 'camt',
-  userId: string
+  userId: string,
+  tenantId?: string
 ) {
   try {
     // Download file from storage
@@ -226,6 +233,7 @@ async function processStatementAsync(
           ...t,
           statement_id: statementId,
           user_id: userId,
+          tenant_id: tenantId,
           status: 'unmatched',
           is_split: false,
         }))

@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { 
   Upload, Download, CheckCircle, AlertCircle, 
   Calendar, Receipt, TrendingUp, FileText,
-  ChevronRight, LogOut, Trash2
+  ChevronRight, LogOut, Trash2, Users
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -137,7 +137,7 @@ export default function DashboardPage() {
 
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Link href="/upload">
             <motion.div
               whileHover={{ y: -2 }}
@@ -169,6 +169,24 @@ export default function DashboardPage() {
                 <div>
                   <h3 className="font-semibold text-slate-900">Exportieren</h3>
                   <p className="text-slate-500 text-sm">DATEV oder CSV Format</p>
+                </div>
+              </div>
+            </motion.div>
+          </Link>
+
+          <Link href="/users">
+            <motion.div
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:border-emerald-300 hover:shadow-md transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Users className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-900">Benutzer</h3>
+                  <p className="text-slate-500 text-sm">Steuerberater einladen</p>
                 </div>
               </div>
             </motion.div>
