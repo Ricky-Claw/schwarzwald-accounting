@@ -8,7 +8,7 @@ import { createClient } from '@supabase/supabase-js';
 import multer from 'multer';
 import { extractReceiptData } from '../services/ocr.service.js';
 import { extractReceiptDataWithKimi, isKimiOCRAvailable } from '../services/ocr-kimi.service.js';
-import { EXPENSE_CATEGORIES, autoCategorize, generateFileName } from '../types/categories.js';
+import { EXPENSE_CATEGORIES, decideCategory, generateFileName } from '../types/categories.js';
 import {
   findMatchingTransaction,
   matchReceiptToTransaction,
@@ -160,6 +160,7 @@ router.post('/', upload.single('file'), async (req, res) => {
     // Rechnungstyp aus Request (incoming=Ausgabe, outgoing=Einnahme)
     const invoiceType = req.body.invoice_type === 'outgoing' ? 'outgoing' : 'incoming';
     const manualCategory = req.body.category_id as string | undefined;
+    const purposeNote = (req.body.purpose_note || req.body.note || '').toString().trim();
 
     // OCR processing - Kimi Vision bevorzugt, dann Azure Fallback
     let ocrResult;
@@ -183,10 +184,9 @@ router.post('/', upload.single('file'), async (req, res) => {
       };
     }
 
-    // Automatische Kategorisierung
-    const category = manualCategory 
-      ? EXPENSE_CATEGORIES.find(c => c.id === manualCategory)
-      : (ocrResult.merchant_name ? autoCategorize(ocrResult.merchant_name) : EXPENSE_CATEGORIES.find(c => c.id === 'sonstiges'));
+    // Automatische Kategorisierung mit Unsicherheitsprüfung
+    const categoryDecision = decideCategory(ocrResult.merchant_name, purposeNote, manualCategory);
+    const category = categoryDecision.category;
 
     // Generiere sinnvollen Dateinamen
     const displayFileName = generateFileName(
@@ -252,7 +252,11 @@ router.post('/', upload.single('file'), async (req, res) => {
         invoice_type: invoiceType,
         skr04_code: category?.skr04Code,
         ocr_confidence: ocrResult.confidence,
-        ocr_raw: ocrResult.raw,
+        ocr_raw: {
+          ...(ocrResult.raw || {}),
+          purpose_note: purposeNote || undefined,
+          category_decision: categoryDecision,
+        },
         ocr_status: ocrResult.success ? 'success' : 'error',
         bank_transaction_id: matchedTransactionId,
         status: 'verified',
@@ -271,6 +275,9 @@ router.post('/', upload.single('file'), async (req, res) => {
       receipt,
       ocr: ocrResult,
       category: category,
+      categoryDecision,
+      needsReview: categoryDecision.needsReview,
+      purposeNote,
       fileName: displayFileName,
       autoMatched: matchedTransactionId ? {
         transactionId: matchedTransactionId,

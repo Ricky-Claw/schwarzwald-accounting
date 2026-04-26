@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, FileText, X, Check, ArrowLeft, Loader2, File, Trash2, Tag, Calendar, ArrowRightLeft } from 'lucide-react';
+import { Upload, FileText, X, Check, ArrowLeft, Loader2, File, Trash2, Tag, Calendar, ArrowRightLeft, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 
 interface Category {
@@ -27,6 +27,10 @@ interface UploadingFile {
     fileName?: string;
     category?: Category;
     skr04Code?: string;
+    needsReview?: boolean;
+    reviewReason?: string;
+    suggestedQuestions?: string[];
+    purposeNote?: string;
   };
   error?: string;
 }
@@ -45,6 +49,7 @@ const EXPENSE_CATEGORIES: Category[] = [
   { id: 'versicherungen', name: 'Versicherungen', skr04Code: '6600', description: 'Haftpflicht, Rechtsschutz', vatRate: 19 },
   { id: 'fortbildung', name: 'Fortbildung & Schulung', skr04Code: '6900', description: 'Kurse, Seminare', vatRate: 19 },
   { id: 'bewirtung', name: 'Bewirtung & Geschenke', skr04Code: '6900', description: 'Kundenbewirtung', vatRate: 19 },
+  { id: 'arbeitskleidung', name: 'Arbeitskleidung', skr04Code: '4980', description: 'Schutz- oder Arbeitskleidung', vatRate: 19 },
   { id: 'reinigung', name: 'Reinigung & Wartung', skr04Code: '6600', description: 'Gebäudereinigung', vatRate: 19 },
   { id: 'sonstiges', name: 'Sonstige Betriebsausgaben', skr04Code: '4900', description: 'Alles andere', vatRate: 19 },
 ];
@@ -60,6 +65,7 @@ export default function UploadPage() {
   const [dragActive, setDragActive] = useState(false);
   const [invoiceType, setInvoiceType] = useState<'incoming' | 'outgoing'>('incoming');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [purposeNote, setPurposeNote] = useState('');
   const [targetInfo, setTargetInfo] = useState<{ month?: string; date?: string; amount?: string; description?: string } | null>(null);
   const router = useRouter();
 
@@ -71,6 +77,7 @@ export default function UploadPage() {
     const description = params.get('description') || undefined;
     if (month || date || amount || description) {
       setTargetInfo({ month, date, amount, description });
+      if (description) setPurposeNote(description);
     }
     // Skip auth check for now - use hardcoded key
     // const apiKey = localStorage.getItem('apiKey');
@@ -124,6 +131,9 @@ export default function UploadPage() {
       if (selectedCategory) {
         formData.append('category_id', selectedCategory);
       }
+      if (purposeNote.trim()) {
+        formData.append('purpose_note', purposeNote.trim());
+      }
 
       const progressInterval = setInterval(() => {
         setFiles((prev) =>
@@ -175,6 +185,10 @@ export default function UploadPage() {
                   fileName: data.fileName,
                   category: category,
                   skr04Code: data.receipt?.skr04_code,
+                  needsReview: data.needsReview,
+                  reviewReason: data.categoryDecision?.reason,
+                  suggestedQuestions: data.categoryDecision?.suggestedQuestions || [],
+                  purposeNote: data.purposeNote,
                 },
               }
             : f
@@ -320,6 +334,22 @@ export default function UploadPage() {
                 Oder lasse die KI die Kategorie automatisch basierend auf dem Händler erkennen
               </p>
             </div>
+          </div>
+
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Zweck / Kontext für die Buchhaltung
+            </label>
+            <textarea
+              value={purposeNote}
+              onChange={(e) => setPurposeNote(e.target.value)}
+              placeholder="z.B. Arbeitskleidung für Lager, Kaffee fürs Kundengespräch mit Max, Büroverpflegung, privat ignorieren..."
+              className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
+              rows={3}
+            />
+            <p className="text-xs text-slate-500 mt-2">
+              Hilft besonders bei Kaffee, Essen, Kleidung, Amazon/Metro oder gemischten Warenkörben. Uneindeutige Belege werden zur Prüfung markiert.
+            </p>
           </div>
         </div>
 
@@ -500,6 +530,25 @@ export default function UploadPage() {
                                   </span>
                                 )}
                               </div>
+                              {file.result.needsReview ? (
+                                <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
+                                  <div className="flex items-start gap-2 text-amber-800 font-medium">
+                                    <AlertTriangle className="w-4 h-4 mt-0.5" />
+                                    Bitte prüfen: {file.result.reviewReason || 'Kategorie nicht eindeutig.'}
+                                  </div>
+                                  {file.result.suggestedQuestions && file.result.suggestedQuestions.length > 0 && (
+                                    <ul className="mt-2 list-disc pl-8 text-amber-800 space-y-1">
+                                      {file.result.suggestedQuestions.map((question) => (
+                                        <li key={question}>{question}</li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </div>
+                              ) : file.result.reviewReason ? (
+                                <p className="mt-2 text-xs text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2">
+                                  {file.result.reviewReason}
+                                </p>
+                              ) : null}
                             </div>
                           )}
 

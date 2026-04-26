@@ -11,6 +11,14 @@ export interface ExpenseCategory {
   keywords: string[]; // Für automatische Kategorisierung
 }
 
+export interface CategoryDecision {
+  category: ExpenseCategory;
+  confidence: 'high' | 'medium' | 'low';
+  needsReview: boolean;
+  reason: string;
+  suggestedQuestions: string[];
+}
+
 // Eingangsrechnungen (Ausgaben)
 export const EXPENSE_CATEGORIES: ExpenseCategory[] = [
   {
@@ -118,6 +126,14 @@ export const EXPENSE_CATEGORIES: ExpenseCategory[] = [
     keywords: ['restaurant', 'essen', 'geschenk', 'bewirtung', 'kaffee', 'catering']
   },
   {
+    id: 'arbeitskleidung',
+    name: 'Arbeitskleidung',
+    skr04Code: '4980',
+    description: 'Beruflich notwendige Schutz- oder Arbeitskleidung',
+    vatRate: 19,
+    keywords: ['arbeitskleidung', 'schutzkleidung', 'sicherheitsschuhe', 'engelbert', 'strauss', 'workwear']
+  },
+  {
     id: 'reinigung',
     name: 'Reinigung & Wartung',
     skr04Code: '6600',
@@ -177,6 +193,89 @@ export function autoCategorize(merchantName: string): ExpenseCategory {
   
   // Default: Sonstiges
   return EXPENSE_CATEGORIES.find(c => c.id === 'sonstiges')!;
+}
+
+export function decideCategory(
+  merchantName: string | undefined,
+  purposeNote?: string,
+  manualCategoryId?: string
+): CategoryDecision {
+  const allCategories = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
+
+  if (manualCategoryId) {
+    const manualCategory = allCategories.find(c => c.id === manualCategoryId);
+    if (manualCategory) {
+      return {
+        category: manualCategory,
+        confidence: 'high',
+        needsReview: false,
+        reason: 'Kategorie manuell gewählt.',
+        suggestedQuestions: []
+      };
+    }
+  }
+
+  const combined = `${merchantName || ''} ${purposeNote || ''}`.toLowerCase();
+  const fallback = EXPENSE_CATEGORIES.find(c => c.id === 'sonstiges')!;
+
+  const ambiguousRules: Array<{
+    match: string[];
+    categoryId: string;
+    reason: string;
+    questions: string[];
+  }> = [
+    {
+      match: ['kaffee', 'cafe', 'café', 'bäcker', 'baecker', 'restaurant', 'essen', 'starbucks'],
+      categoryId: 'bewirtung',
+      reason: 'Verpflegung/Bewirtung braucht meistens Anlass und ggf. Teilnehmer.',
+      questions: ['War es Kundentermin, Mitarbeiterverpflegung oder privat?', 'Bitte Anlass/Teilnehmer in der Notiz ergänzen.']
+    },
+    {
+      match: ['kleidung', 'hose', 'shirt', 'jacke', 'schuhe', 'zalando', 'h&m', 'c&a'],
+      categoryId: 'arbeitskleidung',
+      reason: 'Kleidung ist nur abziehbar, wenn sie klar beruflich/Schutzkleidung ist.',
+      questions: ['Ist es Arbeits-/Schutzkleidung?', 'Falls ja: Zweck ergänzen, z.B. Lager, Baustelle, Messe.']
+    },
+    {
+      match: ['amazon', 'metro', 'kaufland', 'edeka', 'rewe', 'lidl', 'aldi'],
+      categoryId: 'sonstiges',
+      reason: 'Gemischte Händler/Warenkörbe sind ohne Zweck oft nicht eindeutig.',
+      questions: ['Welche Artikel waren betrieblich?', 'Bitte Zweck oder Positionen ergänzen.']
+    }
+  ];
+
+  for (const rule of ambiguousRules) {
+    if (rule.match.some(keyword => combined.includes(keyword))) {
+      const category = EXPENSE_CATEGORIES.find(c => c.id === rule.categoryId) || fallback;
+      const hasUsefulNote = !!purposeNote && purposeNote.trim().length >= 8;
+      return {
+        category,
+        confidence: hasUsefulNote ? 'medium' : 'low',
+        needsReview: !hasUsefulNote,
+        reason: hasUsefulNote ? `${rule.reason} Zweck wurde ergänzt.` : rule.reason,
+        suggestedQuestions: hasUsefulNote ? [] : rule.questions
+      };
+    }
+  }
+
+  if (merchantName) {
+    const category = autoCategorize(merchantName);
+    return {
+      category,
+      confidence: category.id === 'sonstiges' ? 'low' : 'high',
+      needsReview: category.id === 'sonstiges',
+      reason: category.id === 'sonstiges' ? 'Keine eindeutige Kategorie erkannt.' : 'Kategorie über Händler/Keywords erkannt.',
+      suggestedQuestions: category.id === 'sonstiges' ? ['Bitte betrieblichen Zweck ergänzen.'] : []
+    };
+  }
+
+  return {
+    category: fallback,
+    confidence: 'low',
+    needsReview: true,
+    reason: 'OCR konnte keinen eindeutigen Händler erkennen.',
+    suggestedQuestions: ['Bitte Händler, Betrag und Zweck prüfen.']
+  };
 }
 
 // Dateinamen generieren
