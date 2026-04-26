@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { 
   Upload, Download, CheckCircle, AlertCircle, 
   Calendar, Receipt, TrendingUp, FileText,
-  ChevronRight, LogOut, Trash2, Users, BookOpen, Building2
+  ChevronRight, LogOut, Trash2, Users, BookOpen, Building2, FileSpreadsheet
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -185,12 +185,13 @@ export default function DashboardPage() {
               <TrendingUp className="w-4 h-4 text-emerald-700" /> {completionRate}% zugeordnet
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <ActionCard href="/upload" icon={<Upload className="w-5 h-5" />} title="Upload" text="Belege & Kontoauszüge" tone="emerald" index={0} />
-            <ActionCard href="/rules" icon={<BookOpen className="w-5 h-5" />} title="Regeln" text="Merken & prüfen" tone="gold" index={1} />
-            <ActionCard href="/export" icon={<Download className="w-5 h-5" />} title="Export" text="DATEV oder CSV" tone="slate" index={2} />
-            <ActionCard href="/users" icon={<Users className="w-5 h-5" />} title="Benutzer" text="Steuerberater" tone="emerald" index={3} />
-            <ActionCard href="/settings" icon={<Building2 className="w-5 h-5" />} title="Firma" text="Stammdaten" tone="gold" index={4} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+            <ActionCard href="/upload" icon={<Upload className="w-5 h-5" />} title="Belege" text="OCR Upload" tone="emerald" index={0} />
+            <ActionCard href="/statements" icon={<FileSpreadsheet className="w-5 h-5" />} title="Kontoauszüge" text="Auszugs-Ordner" tone="gold" index={1} />
+            <ActionCard href="/rules" icon={<BookOpen className="w-5 h-5" />} title="Regeln" text="Merken & prüfen" tone="gold" index={2} />
+            <ActionCard href="/export" icon={<Download className="w-5 h-5" />} title="Export" text="DATEV oder CSV" tone="slate" index={3} />
+            <ActionCard href="/users" icon={<Users className="w-5 h-5" />} title="Benutzer" text="Steuerberater" tone="emerald" index={4} />
+            <ActionCard href="/settings" icon={<Building2 className="w-5 h-5" />} title="Firma" text="Stammdaten" tone="gold" index={5} />
           </div>
         </section>
 
