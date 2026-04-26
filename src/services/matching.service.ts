@@ -141,8 +141,7 @@ export async function matchReceiptToTransaction(
         bank_transaction_id: transactionId,
         status: 'verified',
       })
-      .eq('id', receiptId)
-      .eq('user_id', userId);
+      .eq('id', receiptId);
 
     if (receiptError) throw receiptError;
 
@@ -176,7 +175,6 @@ export async function autoMatchAllReceipts(userId: string): Promise<{
   const { data: receipts, error } = await supabase
     .from('receipts')
     .select('*')
-    .eq('user_id', userId)
     .is('bank_transaction_id', null)
     .eq('status', 'verified');
 
@@ -306,7 +304,7 @@ export async function getAllMonths(
   // Hole alle Buchungen mit Datum
   const { data: transactions, error } = await supabase
     .from('bank_transactions')
-    .select('transaction_date, receipt_id')
+    .select('transaction_date, receipt_id, amount')
     .eq('user_id', userId)
     .order('transaction_date', { ascending: false });
 
@@ -425,7 +423,7 @@ export async function getDashboardStats(userId: string): Promise<{
     transactionsResult,
     currentMonthResult,
   ] = await Promise.all([
-    supabase.from('receipts').select('id, bank_transaction_id', { count: 'exact' }).eq('user_id', userId),
+    supabase.from('receipts').select('id, bank_transaction_id', { count: 'exact' }),
     supabase.from('bank_transactions').select('id, receipt_id, amount', { count: 'exact' }).eq('user_id', userId),
     getMonthlyOverview(userId, now.getFullYear(), now.getMonth() + 1),
   ]);

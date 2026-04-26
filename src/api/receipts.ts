@@ -98,7 +98,6 @@ router.get('/:id', async (req, res) => {
         transaction:bank_transaction_id (*)
       `)
       .eq('id', id)
-      .eq('user_id', userId)
       .single();
 
     if (error) throw error;
@@ -334,7 +333,6 @@ router.patch('/:id', async (req, res) => {
       .from('receipts')
       .update(updates)
       .eq('id', id)
-      .eq('user_id', userId)
       .select()
       .single();
 
