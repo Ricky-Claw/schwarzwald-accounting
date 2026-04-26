@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { Download, AlertCircle, CheckCircle, FileText, Calendar, ArrowLeft, Loader2, Upload } from 'lucide-react';
+import { Download, AlertCircle, CheckCircle, FileText, Calendar, ArrowLeft, Loader2, Upload, MessageSquare, Lightbulb } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
@@ -141,6 +141,34 @@ function ExportContent() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-8">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+              <Lightbulb className="w-5 h-5 text-blue-700" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-slate-900">Hinweise für Steuerberater</h2>
+              <div className="mt-3 grid gap-3 md:grid-cols-3 text-sm text-slate-700">
+                <div className="bg-white/70 rounded-xl p-3">
+                  <div className="font-medium text-slate-900 mb-1">1. OCR ist Vorschlag</div>
+                  Belege werden automatisch gelesen und SKR04-Kategorien vorgeschlagen. Gelbe Hinweise bedeuten: bitte fachlich prüfen.
+                </div>
+                <div className="bg-white/70 rounded-xl p-3">
+                  <div className="font-medium text-slate-900 mb-1">2. Anmerkungen nutzen</div>
+                  Bei fehlendem Kontext bitte Kommentar hinterlassen, z.B. Anlass, Teilnehmer, Arbeitskleidung oder gemischter Warenkorb.
+                </div>
+                <div className="bg-white/70 rounded-xl p-3">
+                  <div className="font-medium text-slate-900 mb-1">3. Für Zukunft merken</div>
+                  Wiederkehrende Korrekturen sollen künftig als Lernregel gespeichert werden, z.B. Händler → Kategorie/SKR04.
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-blue-800">
+                Ziel: nicht blind automatisieren, sondern unsichere Fälle sichtbar machen und wiederkehrende Entscheidungen nachvollziehbar lernen.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left: Settings */}
           <div className="lg:col-span-1 space-y-6">
@@ -249,7 +277,7 @@ function ExportContent() {
 
               <div className="mt-4">
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Kommentar für Steuerbüro
+                  Kommentar / Anmerkung für Steuerbüro
                 </label>
                 <textarea
                   value={comment}
@@ -258,6 +286,12 @@ function ExportContent() {
                   className="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none resize-none"
                   rows={3}
                 />
+                <div className="mt-3 rounded-lg bg-slate-50 border border-slate-200 p-3 text-xs text-slate-600 flex items-start gap-2">
+                  <MessageSquare className="w-4 h-4 text-slate-500 mt-0.5" />
+                  <span>
+                    Hier können offene Punkte für den Jahresabschluss notiert werden. Beispiel: „Kaffee = Kundentermin mit X“, „Kleidung = Arbeitsschutz“, „Amazon-Beleg enthält privat + betrieblich“.
+                  </span>
+                </div>
               </div>
             </motion.div>
           </div>

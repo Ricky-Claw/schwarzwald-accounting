@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, FileText, X, Check, ArrowLeft, Loader2, File, Trash2, Tag, Calendar, ArrowRightLeft, AlertTriangle } from 'lucide-react';
+import { Upload, FileText, X, Check, ArrowLeft, Loader2, File, Trash2, Tag, Calendar, ArrowRightLeft, AlertTriangle, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 
 interface Category {
@@ -278,6 +278,21 @@ export default function UploadPage() {
 
         {/* Rechnungstyp & Kategorie Auswahl */}
         <div className="bg-white rounded-xl p-6 border border-slate-200 mb-6">
+          <div className="mb-6 bg-slate-50 border border-slate-200 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <BookOpen className="w-5 h-5 text-slate-600 mt-0.5" />
+              <div>
+                <h2 className="font-semibold text-slate-900">So funktioniert die Prüfung</h2>
+                <p className="text-sm text-slate-600 mt-1">
+                  OCR liest Händler, Datum, Betrag und MwSt. Die Kategorie ist ein Vorschlag. Bei Kaffee, Kleidung, Amazon/Metro oder gemischten Belegen bitte den Zweck ergänzen.
+                </p>
+                <p className="text-xs text-slate-500 mt-2">
+                  Später kann eine Korrektur als Lernregel gespeichert werden: „Für Zukunft merken“ — z.B. Engelbert Strauss → Arbeitskleidung.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Rechnungstyp */}
             <div>
@@ -350,6 +365,18 @@ export default function UploadPage() {
             <p className="text-xs text-slate-500 mt-2">
               Hilft besonders bei Kaffee, Essen, Kleidung, Amazon/Metro oder gemischten Warenkörben. Uneindeutige Belege werden zur Prüfung markiert.
             </p>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              {['Kaffee fürs Kundengespräch', 'Arbeitskleidung fürs Lager', 'Amazon: Toner + privat getrennt', 'Bewirtung mit Teilnehmern'].map((example) => (
+                <button
+                  key={example}
+                  type="button"
+                  onClick={() => setPurposeNote(example)}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-full transition-colors"
+                >
+                  {example}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -543,6 +570,9 @@ export default function UploadPage() {
                                       ))}
                                     </ul>
                                   )}
+                                  <div className="mt-3 rounded-lg bg-white/70 p-2 text-xs text-amber-900">
+                                    Steuerberater-Hinweis: Wenn die korrigierte Kategorie künftig automatisch gelten soll, als Lernregel merken lassen.
+                                  </div>
                                 </div>
                               ) : file.result.reviewReason ? (
                                 <p className="mt-2 text-xs text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2">
