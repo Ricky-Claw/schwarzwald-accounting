@@ -271,9 +271,9 @@ export default function UploadPage() {
   const matchedCount = files.filter((f) => f.result?.matched).length;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfdf5,_transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)]">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200">
+      <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-white/70 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <Link href={targetInfo?.month ? `/dashboard/months/${targetInfo.month}` : '/dashboard'} className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-2">
             <ArrowLeft className="w-4 h-4" />
@@ -299,7 +299,7 @@ export default function UploadPage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <motion.main initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="max-w-7xl mx-auto px-6 py-8">
         {targetInfo && (
           <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 mb-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -319,8 +319,8 @@ export default function UploadPage() {
         )}
 
         {/* Rechnungstyp & Kategorie Auswahl */}
-        <div className="bg-white rounded-xl p-6 border border-slate-200 mb-6">
-          <div className="mb-6 bg-slate-50 border border-slate-200 rounded-xl p-4">
+        <div className="bg-white/85 rounded-2xl p-6 border border-white/80 shadow-sm mb-6">
+          <div className="mb-6 bg-gradient-to-br from-slate-50 to-emerald-50/60 border border-slate-200 rounded-2xl p-4">
             <div className="flex items-start gap-3">
               <BookOpen className="w-5 h-5 text-slate-600 mt-0.5" />
               <div>
@@ -431,7 +431,7 @@ export default function UploadPage() {
               onDragOver={handleDrag}
               onDrop={handleDrop}
               animate={{ scale: dragActive ? 1.01 : 1 }}
-              className={`relative bg-white rounded-xl border-2 border-dashed p-12 text-center transition-colors ${
+              className={`relative bg-white/85 rounded-3xl border-2 border-dashed p-12 text-center transition-all shadow-sm hover:shadow-xl hover:shadow-emerald-950/5 ${
                 dragActive ? 'border-emerald-500 bg-emerald-50' : 'border-slate-300'
               }`}
             >
@@ -444,7 +444,7 @@ export default function UploadPage() {
               />
 
               <motion.div animate={{ y: dragActive ? -5 : 0 }} className="pointer-events-none">
-                <div className="w-16 h-16 bg-emerald-100 rounded-xl mx-auto mb-4 flex items-center justify-center">
+                <div className="w-16 h-16 bg-emerald-100 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-inner">
                   <Upload className="w-8 h-8 text-emerald-600" />
                 </div>
                 <h3 className="text-lg font-semibold text-slate-900 mb-2">
@@ -699,7 +699,7 @@ export default function UploadPage() {
             )}
           </div>
         </div>
-      </main>
+      </motion.main>
     </div>
   );
 }

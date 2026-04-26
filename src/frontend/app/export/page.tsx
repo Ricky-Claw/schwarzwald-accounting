@@ -28,7 +28,7 @@ interface ExportStatus {
 
 export default function ExportPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-emerald-600" /></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfdf5,_transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-emerald-600" /></div>}>
       <ExportContent />
     </Suspense>
   );
@@ -128,9 +128,9 @@ function ExportContent() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfdf5,_transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)]">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200">
+      <header className="bg-white/80 backdrop-blur-xl border-b border-white/70 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <Link href="/dashboard" className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-2">
             <ArrowLeft className="w-4 h-4" />
@@ -140,7 +140,7 @@ function ExportContent() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <motion.main initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="max-w-7xl mx-auto px-6 py-8">
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-8">
           <div className="flex items-start gap-4">
             <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
@@ -443,7 +443,7 @@ function ExportContent() {
             </motion.div>
           </div>
         </div>
-      </main>
+      </motion.main>
     </div>
   );
 }

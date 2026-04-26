@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -101,11 +102,11 @@ export default function UsersPage() {
     }
   }
 
-  if (loading) return <div className="min-h-screen bg-slate-50 p-8">Lade Benutzer...</div>;
+  if (loading) return <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfdf5,_transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] p-8">Lade Benutzer...</div>;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfdf5,_transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)]">
+      <header className="bg-white/80 backdrop-blur-xl border-b border-white/70 shadow-sm">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
             <Link href="/dashboard" className="text-sm text-slate-500 hover:text-slate-800 flex items-center gap-1 mb-2">
@@ -117,10 +118,10 @@ export default function UsersPage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-8 space-y-6">
+      <motion.main initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="max-w-5xl mx-auto px-6 py-8 space-y-6">
         {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{error}</div>}
 
-        <section className="bg-white rounded-xl border border-slate-200 p-6">
+        <section className="bg-white/85 rounded-2xl border border-white/80 shadow-sm p-6">
           <h2 className="font-semibold text-slate-900 mb-4 flex items-center gap-2"><Mail className="w-5 h-5" /> Neue Einladung</h2>
           <div className="grid md:grid-cols-3 gap-4">
             <input
@@ -153,7 +154,7 @@ export default function UsersPage() {
           )}
         </section>
 
-        <section className="bg-white rounded-xl border border-slate-200 p-6">
+        <section className="bg-white/85 rounded-2xl border border-white/80 shadow-sm p-6">
           <h2 className="font-semibold text-slate-900 mb-4 flex items-center gap-2"><Shield className="w-5 h-5" /> Aktive Benutzer</h2>
           <div className="divide-y divide-slate-100">
             {members.map((member) => (
@@ -170,7 +171,7 @@ export default function UsersPage() {
           </div>
         </section>
 
-        <section className="bg-white rounded-xl border border-slate-200 p-6">
+        <section className="bg-white/85 rounded-2xl border border-white/80 shadow-sm p-6">
           <h2 className="font-semibold text-slate-900 mb-4">Offene Einladungen</h2>
           <div className="space-y-3">
             {invites.length === 0 && <p className="text-sm text-slate-500">Keine offenen Einladungen.</p>}
@@ -185,7 +186,7 @@ export default function UsersPage() {
             ))}
           </div>
         </section>
-      </main>
+      </motion.main>
     </div>
   );
 }

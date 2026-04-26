@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { 
   Upload, Download, CheckCircle, AlertCircle, 
   Calendar, Receipt, TrendingUp, FileText,
-  ChevronRight, LogOut, Trash2, Users, BookOpen, Building2
+  ChevronRight, LogOut, Trash2, Users, BookOpen, Building2, Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -108,14 +108,15 @@ export default function DashboardPage() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfdf5,_transparent_32%),linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)]">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200">
+      <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-white/70 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-slate-900">Lanista Buchhaltung</h1>
-              <p className="text-slate-500 text-sm">Professionelle Buchhaltung einfach gemacht</p>
+              <div className="inline-flex items-center gap-2 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full mb-2"><Sparkles className="w-3.5 h-3.5" /> Beta ready</div>
+              <h1 className="text-2xl font-semibold text-slate-950 tracking-tight">Lanista Buchhaltung</h1>
+              <p className="text-slate-500 text-sm">Belege, Regeln, Export — alles an einem Ort.</p>
             </div>
             <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-lg">
               <CheckCircle className="w-5 h-5" />
@@ -135,15 +136,16 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <motion.main initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="max-w-7xl mx-auto px-6 py-8">
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
           <Link href="/upload">
             <motion.div
-              whileHover={{ y: -2 }}
+              whileHover={{ y: -4, scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
-              className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:border-emerald-300 hover:shadow-md transition-all cursor-pointer"
+              className="group relative overflow-hidden bg-white/85 rounded-2xl p-6 shadow-sm border border-white/80 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-950/5 transition-all cursor-pointer"
             >
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-300 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
                   <Upload className="w-6 h-6 text-emerald-600" />
@@ -158,10 +160,11 @@ export default function DashboardPage() {
 
           <Link href="/export">
             <motion.div
-              whileHover={{ y: -2 }}
+              whileHover={{ y: -4, scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
-              className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:border-emerald-300 hover:shadow-md transition-all cursor-pointer"
+              className="group relative overflow-hidden bg-white/85 rounded-2xl p-6 shadow-sm border border-white/80 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-950/5 transition-all cursor-pointer"
             >
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-300 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center">
                   <Download className="w-6 h-6 text-slate-600" />
@@ -176,10 +179,11 @@ export default function DashboardPage() {
 
           <Link href="/users">
             <motion.div
-              whileHover={{ y: -2 }}
+              whileHover={{ y: -4, scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
-              className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:border-emerald-300 hover:shadow-md transition-all cursor-pointer"
+              className="group relative overflow-hidden bg-white/85 rounded-2xl p-6 shadow-sm border border-white/80 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-950/5 transition-all cursor-pointer"
             >
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-300 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                   <Users className="w-6 h-6 text-blue-600" />
@@ -193,18 +197,20 @@ export default function DashboardPage() {
           </Link>
 
           <Link href="/rules">
-            <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:border-emerald-300 hover:shadow-md transition-all cursor-pointer">
+            <motion.div whileHover={{ y: -4, scale: 1.01 }} whileTap={{ scale: 0.98 }} className="group relative overflow-hidden bg-white/85 rounded-2xl p-6 shadow-sm border border-white/80 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-950/5 transition-all cursor-pointer">
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-300 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="flex items-center gap-4"><div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center"><BookOpen className="w-6 h-6 text-amber-600" /></div><div><h3 className="font-semibold text-slate-900">Regeln</h3><p className="text-slate-500 text-sm">Merken & prüfen</p></div></div>
             </motion.div>
           </Link>
 
           <Link href="/settings">
-            <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:border-emerald-300 hover:shadow-md transition-all cursor-pointer">
+            <motion.div whileHover={{ y: -4, scale: 1.01 }} whileTap={{ scale: 0.98 }} className="group relative overflow-hidden bg-white/85 rounded-2xl p-6 shadow-sm border border-white/80 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-950/5 transition-all cursor-pointer">
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-300 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="flex items-center gap-4"><div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center"><Building2 className="w-6 h-6 text-purple-600" /></div><div><h3 className="font-semibold text-slate-900">Firma</h3><p className="text-slate-500 text-sm">Stammdaten</p></div></div>
             </motion.div>
           </Link>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+          <div className="bg-white/80 rounded-2xl p-6 shadow-sm border border-white/80">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-slate-600" />
@@ -261,7 +267,7 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
-      </main>
+      </motion.main>
     </div>
   );
 }
@@ -284,7 +290,7 @@ function StatCard({
   };
 
   return (
-    <div className={`rounded-xl p-4 border shadow-sm ${variantStyles[variant]}`}>
+    <div className={`rounded-2xl p-4 border shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all ${variantStyles[variant]}`}>
       <div className="flex items-center gap-3">
         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
           variant === 'success' ? 'bg-emerald-100 text-emerald-600' :
@@ -324,7 +330,8 @@ function MonthCard({ month, index }: { month: MonthStatus; index: number }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
       onClick={handleClick}
-      className={`rounded-xl p-5 border shadow-sm cursor-pointer hover:shadow-md transition-shadow ${config.bg} ${config.border}`}
+      whileHover={{ y: -3, scale: 1.01 }}
+      className={`rounded-2xl p-5 border shadow-sm cursor-pointer hover:shadow-lg transition-all ${config.bg} ${config.border}`}
     >
       <div className="flex items-start justify-between mb-3">
         <div>
@@ -339,7 +346,7 @@ function MonthCard({ month, index }: { month: MonthStatus; index: number }) {
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.5, delay: index * 0.05 }}
+          transition={{ duration: 0.7, delay: index * 0.05, ease: 'easeOut' }}
           className={`h-full rounded-full ${config.bar}`}
         />
       </div>
