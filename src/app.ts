@@ -27,8 +27,22 @@ const PORT = process.env.PORT || 3001;
 app.use(helmet());
 
 // CORS
+const allowedOrigins = new Set([
+  'http://localhost:3000',
+  'https://lanista-buchhaltung.vercel.app',
+  'https://lanista-buchhaltung-ppwlssqlx-ricky-claws-projects.vercel.app',
+  ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',').map(origin => origin.trim()) : []),
+]);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.has(origin) || /^https:\/\/lanista-buchhaltung-[a-z0-9-]+\.vercel\.app$/.test(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error(`CORS blocked for origin ${origin}`));
+  },
   credentials: true,
 }));
 
