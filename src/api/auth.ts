@@ -3,6 +3,7 @@
 // ============================================
 
 import { Router } from 'express';
+import { getTenantContext } from '../services/tenant.service.js';
 
 const router = Router();
 
@@ -22,9 +23,9 @@ router.get('/key', (req, res) => {
 // ============================================
 // Auth Middleware Export
 // ============================================
-export function authMiddleware(req: any, res: any, next: any) {
-  // Skip auth for health
-  if (req.path === '/health') {
+export async function authMiddleware(req: any, res: any, next: any) {
+  // Skip auth for health and public invite acceptance
+  if (req.path === '/health' || (req.method === 'POST' && /^\/api\/accounting\/tenants\/invites\/[^/]+\/accept$/.test(req.path))) {
     return next();
   }
 
@@ -45,6 +46,13 @@ export function authMiddleware(req: any, res: any, next: any) {
 
   if (key === API_KEY) {
     req.userId = USER_ID;
+    try {
+      const tenantId = req.headers['x-tenant-id'] as string | undefined;
+      req.tenantContext = await getTenantContext(USER_ID, tenantId);
+      req.tenantId = req.tenantContext.tenantId;
+    } catch (error) {
+      console.error('Tenant context error:', error);
+    }
     return next();
   }
 
