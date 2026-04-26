@@ -41,6 +41,7 @@ const supabase = createClient(
 router.get('/', async (req, res) => {
   try {
     const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { month, status, unmatched } = req.query;
@@ -49,6 +50,8 @@ router.get('/', async (req, res) => {
       .from('receipts')
       .select('*')
       .order('created_at', { ascending: false });
+
+    query = tenantId ? query.eq('tenant_id', tenantId) : query.eq('user_id', userId);
 
     if (month) {
       // Filter by month "2024-02" - korrektes Monatsende berechnen
@@ -79,18 +82,20 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
     const { id } = req.params;
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('receipts')
       .select(`
         *,
         transaction:bank_transaction_id (*)
       `)
-      .eq('id', id)
-      .single();
+      .eq('id', id);
+    query = tenantId ? query.eq('tenant_id', tenantId) : query.eq('user_id', userId);
+    const { data, error } = await query.single();
 
     if (error) throw error;
 
@@ -108,6 +113,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', upload.single('file'), async (req, res) => {
   try {
     const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     if (!req.file) {
@@ -224,7 +230,7 @@ router.post('/', upload.single('file'), async (req, res) => {
         amount: ocrResult.total_amount,
         date: ocrResult.date,
         merchantName: ocrResult.merchant_name,
-      });
+      }, tenantId);
 
       if (match.success && match.confidence > 0.8) {
         matchedTransactionId = match.transactionId || null;
@@ -235,7 +241,8 @@ router.post('/', upload.single('file'), async (req, res) => {
           await matchReceiptToTransaction(
             '', // Will be updated after insert
             matchedTransactionId,
-            userId
+            userId,
+            tenantId
           );
         }
       }
@@ -248,6 +255,7 @@ router.post('/', upload.single('file'), async (req, res) => {
       .from('receipts')
       .insert({
         // user_id removed - FK constraint dropped
+        tenant_id: tenantId,
         merchant_name: ocrResult.merchant_name,
         receipt_date: ocrResult.date,
         total_amount: ocrResult.total_amount,
@@ -276,7 +284,7 @@ router.post('/', upload.single('file'), async (req, res) => {
 
     // If auto-matched, update the match with correct receipt ID
     if (matchedTransactionId) {
-      await matchReceiptToTransaction(receipt.id, matchedTransactionId, userId);
+      await matchReceiptToTransaction(receipt.id, matchedTransactionId, userId, tenantId);
     }
 
     res.status(201).json({
@@ -315,6 +323,7 @@ router.post('/', upload.single('file'), async (req, res) => {
 router.patch('/:id', async (req, res) => {
   try {
     const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
     const { id } = req.params;
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -336,12 +345,12 @@ router.patch('/:id', async (req, res) => {
       }
     }
 
-    const { data, error } = await supabase
+    let updateQuery = supabase
       .from('receipts')
       .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
+      .eq('id', id);
+    updateQuery = tenantId ? updateQuery.eq('tenant_id', tenantId) : updateQuery.eq('user_id', userId);
+    const { data, error } = await updateQuery.select().single();
 
     if (error) throw error;
 
@@ -359,13 +368,14 @@ router.patch('/:id', async (req, res) => {
 router.post('/:id/match', async (req, res) => {
   try {
     const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
     const { id } = req.params;
     const { transaction_id } = req.body;
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
     if (!transaction_id) return res.status(400).json({ error: 'transaction_id required' });
 
-    const success = await matchReceiptToTransaction(id, transaction_id, userId);
+    const success = await matchReceiptToTransaction(id, transaction_id, userId, tenantId);
 
     if (!success) {
       return res.status(400).json({ error: 'Failed to match' });
@@ -406,16 +416,18 @@ router.post('/auto-match', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
     const { id } = req.params;
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     // Get receipt
-    const { data: receipt } = await supabase
+    let receiptQuery = supabase
       .from('receipts')
       .select('file_path, bank_transaction_id')
-      .eq('id', id)
-      .single();
+      .eq('id', id);
+    receiptQuery = tenantId ? receiptQuery.eq('tenant_id', tenantId) : receiptQuery.eq('user_id', userId);
+    const { data: receipt } = await receiptQuery.single();
 
     // Delete file from storage
     if (receipt?.file_path) {
@@ -431,10 +443,12 @@ router.delete('/:id', async (req, res) => {
     }
 
     // Delete receipt
-    const { error } = await supabase
+    let deleteQuery = supabase
       .from('receipts')
       .delete()
       .eq('id', id);
+    deleteQuery = tenantId ? deleteQuery.eq('tenant_id', tenantId) : deleteQuery.eq('user_id', userId);
+    const { error } = await deleteQuery;
 
     if (error) throw error;
 
@@ -455,7 +469,7 @@ router.get('/dashboard/stats', async (req, res) => {
     const userId = (req as any).userId as string;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const stats = await getDashboardStats(userId);
+    const stats = await getDashboardStats(userId, (req as any).tenantId);
 
     res.json(stats);
   } catch (error) {
@@ -471,7 +485,7 @@ router.get('/months/list', async (req, res) => {
     const userId = (req as any).userId as string;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const months = await getAllMonths(userId);
+    const months = await getAllMonths(userId, (req as any).tenantId);
 
     res.json({ months });
   } catch (error) {
@@ -490,7 +504,7 @@ router.get('/months/:year/:month', async (req, res) => {
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const overview = await getMonthlyOverview(userId, year, month);
+    const overview = await getMonthlyOverview(userId, year, month, (req as any).tenantId);
 
     res.json(overview);
   } catch (error) {
@@ -509,7 +523,7 @@ router.get('/months/:year/:month/missing', async (req, res) => {
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const missing = await findMissingReceipts(userId, year, month);
+    const missing = await findMissingReceipts(userId, year, month, (req as any).tenantId);
 
     res.json({
       year,

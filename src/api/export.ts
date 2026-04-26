@@ -15,6 +15,7 @@ const router = Router();
 router.post('/', async (req, res) => {
   try {
     const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const {
@@ -40,6 +41,7 @@ router.post('/', async (req, res) => {
 
     // Generiere Export
     const result = await generateExport(userId, {
+      tenantId,
       year: parseInt(year),
       month: parseInt(month),
       format,
@@ -82,6 +84,7 @@ router.post('/', async (req, res) => {
 router.post('/preview', async (req, res) => {
   try {
     const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { year, month } = req.body;
@@ -92,6 +95,7 @@ router.post('/preview', async (req, res) => {
 
     // Generiere CSV fuer Vorschau (nicht download)
     const result = await generateExport(userId, {
+      tenantId,
       year: parseInt(year),
       month: parseInt(month),
       format: 'csv',
@@ -123,6 +127,7 @@ router.post('/preview', async (req, res) => {
 router.get('/status/:year/:month', async (req, res) => {
   try {
     const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
     const year = parseInt(req.params.year);
     const month = parseInt(req.params.month);
 
@@ -130,6 +135,7 @@ router.get('/status/:year/:month', async (req, res) => {
 
     // Generiere kurze Vorschau
     const result = await generateExport(userId, {
+      tenantId,
       year,
       month,
       format: 'csv',

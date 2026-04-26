@@ -20,6 +20,7 @@ const CATEGORY_BY_SKR04 = new Map(
 );
 
 export interface ExportOptions {
+  tenantId?: string;
   year: number;
   month: number;
   format: 'datev' | 'csv';
@@ -62,19 +63,21 @@ export async function generateExport(
   userId: string,
   options: ExportOptions
 ): Promise<ExportResult> {
-  const { year, month, format, includeIncomplete, comment } = options;
+  const { year, month, format, includeIncomplete, comment, tenantId } = options;
   
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
   const lastDay = new Date(year, month, 0).getDate();
   const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
   
-  const { data: transactions, error } = await supabase
+  let txQuery = supabase
     .from('bank_transactions')
     .select('*')
-    .eq('user_id', userId)
     .gte('transaction_date', startDate)
-    .lte('transaction_date', endDate)
-    .order('transaction_date', { ascending: true });
+    .lte('transaction_date', endDate);
+
+  txQuery = tenantId ? txQuery.eq('tenant_id', tenantId) : txQuery.eq('user_id', userId);
+
+  const { data: transactions, error } = await txQuery.order('transaction_date', { ascending: true });
 
   if (error) throw error;
 

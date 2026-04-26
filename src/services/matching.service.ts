@@ -48,7 +48,8 @@ export async function findMatchingTransaction(
     amount: number;
     date: string;
     merchantName?: string;
-  }
+  },
+  tenantId?: string
 ): Promise<MatchingResult> {
   const receiptDate = new Date(receiptData.date);
   const toleranceDays = 3;
@@ -60,14 +61,16 @@ export async function findMatchingTransaction(
   const endDate = new Date(receiptDate);
   endDate.setDate(endDate.getDate() + toleranceDays);
 
-  const { data: transactions, error } = await supabase
+  let query = supabase
     .from('bank_transactions')
     .select('*')
-    .eq('user_id', userId)
     .eq('status', 'unmatched') // Nur ungematchte
     .gte('transaction_date', startDate.toISOString().split('T')[0])
-    .lte('transaction_date', endDate.toISOString().split('T')[0])
-    .order('transaction_date', { ascending: true });
+    .lte('transaction_date', endDate.toISOString().split('T')[0]);
+
+  query = tenantId ? query.eq('tenant_id', tenantId) : query.eq('user_id', userId);
+
+  const { data: transactions, error } = await query.order('transaction_date', { ascending: true });
 
   if (error || !transactions || transactions.length === 0) {
     return { success: false, confidence: 0, matchType: 'manual' };
@@ -131,7 +134,8 @@ export async function findMatchingTransaction(
 export async function matchReceiptToTransaction(
   receiptId: string,
   transactionId: string,
-  userId: string
+  userId: string,
+  tenantId?: string
 ): Promise<boolean> {
   try {
     // Update Receipt
@@ -146,14 +150,17 @@ export async function matchReceiptToTransaction(
     if (receiptError) throw receiptError;
 
     // Update Transaction
-    const { error: transError } = await supabase
+    let transQuery = supabase
       .from('bank_transactions')
       .update({
         receipt_id: receiptId,
         status: 'matched',
       })
-      .eq('id', transactionId)
-      .eq('user_id', userId);
+      .eq('id', transactionId);
+
+    transQuery = tenantId ? transQuery.eq('tenant_id', tenantId) : transQuery.eq('user_id', userId);
+
+    const { error: transError } = await transQuery;
 
     if (transError) throw transError;
 
@@ -217,7 +224,8 @@ export async function autoMatchAllReceipts(userId: string): Promise<{
 export async function getMonthlyOverview(
   userId: string,
   year: number,
-  month: number
+  month: number,
+  tenantId?: string
 ): Promise<MonthlyOverview> {
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
   // Letzter Tag des Monats korrekt berechnen
@@ -225,13 +233,15 @@ export async function getMonthlyOverview(
   const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
   // Hole Buchungen
-  const { data: transactions, error } = await supabase
+  let txQuery = supabase
     .from('bank_transactions')
     .select('*')
-    .eq('user_id', userId)
     .gte('transaction_date', startDate)
-    .lte('transaction_date', endDate)
-    .order('transaction_date', { ascending: false });
+    .lte('transaction_date', endDate);
+
+  txQuery = tenantId ? txQuery.eq('tenant_id', tenantId) : txQuery.eq('user_id', userId);
+
+  const { data: transactions, error } = await txQuery.order('transaction_date', { ascending: false });
   
   // Hole zugehörige Belege separat
   const receiptIds = (transactions || []).map(t => t.receipt_id).filter(Boolean);
@@ -292,7 +302,8 @@ export async function getMonthlyOverview(
  * Liste aller Monate mit Status (für Navigation)
  */
 export async function getAllMonths(
-  userId: string
+  userId: string,
+  tenantId?: string
 ): Promise<Array<{
   month: string;
   monthName: string;
@@ -302,11 +313,13 @@ export async function getAllMonths(
   status: 'complete' | 'incomplete' | 'empty';
 }>> {
   // Hole alle Buchungen mit Datum
-  const { data: transactions, error } = await supabase
+  let txQuery = supabase
     .from('bank_transactions')
-    .select('transaction_date, receipt_id, amount')
-    .eq('user_id', userId)
-    .order('transaction_date', { ascending: false });
+    .select('transaction_date, receipt_id, amount');
+
+  txQuery = tenantId ? txQuery.eq('tenant_id', tenantId) : txQuery.eq('user_id', userId);
+
+  const { data: transactions, error } = await txQuery.order('transaction_date', { ascending: false });
 
   if (error || !transactions) return [];
 
@@ -380,20 +393,24 @@ function shouldHaveReceipt(transaction: BankTransaction): boolean {
 export async function findMissingReceipts(
   userId: string,
   year: number,
-  month: number
+  month: number,
+  tenantId?: string
 ): Promise<BankTransaction[]> {
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-  const { data: transactions, error } = await supabase
+  let txQuery = supabase
     .from('bank_transactions')
     .select('*')
-    .eq('user_id', userId)
     .is('receipt_id', null)
     .lt('amount', 0) // Nur Ausgaben
     .gte('transaction_date', startDate)
-    .lte('transaction_date', endDate)
-    .order('transaction_date', { ascending: false });
+    .lte('transaction_date', endDate);
+
+  txQuery = tenantId ? txQuery.eq('tenant_id', tenantId) : txQuery.eq('user_id', userId);
+
+  const { data: transactions, error } = await txQuery.order('transaction_date', { ascending: false });
 
   if (error) throw error;
   return transactions || [];
@@ -402,7 +419,7 @@ export async function findMissingReceipts(
 /**
  * Status-Übersicht für Dashboard
  */
-export async function getDashboardStats(userId: string): Promise<{
+export async function getDashboardStats(userId: string, tenantId?: string): Promise<{
   totalReceipts: number;
   unmatchedReceipts: number;
   totalTransactions: number;
@@ -417,15 +434,21 @@ export async function getDashboardStats(userId: string): Promise<{
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
+  let receiptsQuery = supabase.from('receipts').select('id, bank_transaction_id', { count: 'exact' });
+  let transactionsQuery = supabase.from('bank_transactions').select('id, receipt_id, amount', { count: 'exact' });
+
+  receiptsQuery = tenantId ? receiptsQuery.eq('tenant_id', tenantId) : receiptsQuery.eq('user_id', userId);
+  transactionsQuery = tenantId ? transactionsQuery.eq('tenant_id', tenantId) : transactionsQuery.eq('user_id', userId);
+
   // Parallel queries
   const [
     receiptsResult,
     transactionsResult,
     currentMonthResult,
   ] = await Promise.all([
-    supabase.from('receipts').select('id, bank_transaction_id', { count: 'exact' }),
-    supabase.from('bank_transactions').select('id, receipt_id, amount', { count: 'exact' }).eq('user_id', userId),
-    getMonthlyOverview(userId, now.getFullYear(), now.getMonth() + 1),
+    receiptsQuery,
+    transactionsQuery,
+    getMonthlyOverview(userId, now.getFullYear(), now.getMonth() + 1, tenantId),
   ]);
 
   const receipts = receiptsResult.data || [];
