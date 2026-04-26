@@ -122,8 +122,8 @@ export default function UploadPage() {
 
   const uploadFile = async (fileObj: UploadingFile) => {
     try {
-      // Hardcoded API key for now - matches backend default
-      const apiKey = 'lanista-secret-key-2024';
+      const apiKey = localStorage.getItem('apiKey') || process.env.NEXT_PUBLIC_API_KEY || 'lanista-secret-key-2024';
+      const tenantId = localStorage.getItem('tenantId');
       
       console.log('Uploading with API key:', apiKey.substring(0, 10) + '...');
       
@@ -150,11 +150,11 @@ export default function UploadPage() {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://lanista-backend.onrender.com';
       console.log('API URL:', apiUrl);
 
+      const headers: Record<string, string> = { 'x-api-key': apiKey };
+      if (tenantId) headers['x-tenant-id'] = tenantId;
       const response = await fetch(`${apiUrl}/api/accounting/receipts`, {
         method: 'POST',
-        headers: {
-          'x-api-key': apiKey,
-        },
+        headers,
         body: formData,
       });
 
@@ -234,10 +234,13 @@ export default function UploadPage() {
 
     try {
       const apiKey = localStorage.getItem('apiKey') || 'lanista-secret-key-2024';
+      const tenantId = localStorage.getItem('tenantId');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://lanista-backend.onrender.com';
+      const headers: Record<string, string> = { 'Content-Type': 'application/json', 'x-api-key': apiKey };
+      if (tenantId) headers['x-tenant-id'] = tenantId;
       const response = await fetch(`${apiUrl}/api/accounting/rules`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+        headers,
         body: JSON.stringify({
           merchant_pattern: result.merchant || undefined,
           purpose_pattern: result.purposeNote || undefined,

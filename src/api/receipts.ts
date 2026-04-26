@@ -196,7 +196,8 @@ router.post('/', upload.single('file'), async (req, res) => {
       userId,
       ocrResult.merchant_name,
       purposeNote,
-      JSON.stringify(ocrResult.raw || {})
+      JSON.stringify(ocrResult.raw || {}),
+      tenantId
     );
     const categoryDecision = learnedRule?.decision || decideCategory(ocrResult.merchant_name, purposeNote, manualCategory);
     const category = categoryDecision.category;

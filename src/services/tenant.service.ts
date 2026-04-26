@@ -140,6 +140,26 @@ export async function listTenants(userId: string) {
   return data || [];
 }
 
+export async function updateTenant(ctx: TenantContext, input: any) {
+  if (!ctx.canManageUsers) throw new Error('Missing permission: manage users');
+
+  const allowed = ['name', 'legal_name', 'tax_number', 'vat_id', 'address', 'fiscal_year_start_month'];
+  const updates = Object.fromEntries(
+    Object.entries(input).filter(([key]) => allowed.includes(key))
+  );
+  updates.updated_at = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from('accounting_tenants')
+    .update(updates)
+    .eq('id', ctx.tenantId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 export async function listTenantMembers(ctx: TenantContext) {
   if (!ctx.canManageUsers) throw new Error('Missing permission: manage users');
 

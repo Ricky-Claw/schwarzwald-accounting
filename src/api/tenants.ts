@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { acceptInvite, createInvite, ensureDefaultTenant, getTenantContext, listOpenInvites, listTenantMembers, listTenants } from '../services/tenant.service.js';
+import { acceptInvite, createInvite, ensureDefaultTenant, getTenantContext, listOpenInvites, listTenantMembers, listTenants, updateTenant } from '../services/tenant.service.js';
 
 const router = Router();
 
@@ -40,6 +40,21 @@ router.get('/members', async (req, res) => {
   } catch (error) {
     console.error('Members list error:', error);
     res.status(500).json({ error: (error as Error).message || 'Failed to list members' });
+  }
+});
+
+router.patch('/current', async (req, res) => {
+  try {
+    const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const ctx = await getTenantContext(userId, tenantId);
+    const tenant = await updateTenant(ctx, req.body);
+    res.json({ tenant });
+  } catch (error) {
+    console.error('Tenant update error:', error);
+    res.status(500).json({ error: (error as Error).message || 'Failed to update tenant' });
   }
 });
 

@@ -46,15 +46,21 @@ export async function findMatchingRule(
   userId: string,
   merchantName?: string,
   purposeNote?: string,
-  ocrText?: string
+  ocrText?: string,
+  tenantId?: string
 ): Promise<RuleMatch | null> {
-  const { data, error } = await supabase
+  let query = supabase
     .from('accounting_rules')
     .select('*')
     .eq('active', true)
-    .or(`user_id.eq.${userId},user_id.is.null`)
     .order('usage_count', { ascending: false })
     .limit(100);
+
+  query = tenantId
+    ? query.or(`tenant_id.eq.${tenantId},tenant_id.is.null`)
+    : query.or(`user_id.eq.${userId},user_id.is.null`);
+
+  const { data, error } = await query;
 
   if (error || !data) return null;
 
@@ -96,22 +102,28 @@ export async function findMatchingRule(
   return null;
 }
 
-export async function listRules(userId: string): Promise<AccountingRule[]> {
-  const { data, error } = await supabase
+export async function listRules(userId: string, tenantId?: string): Promise<AccountingRule[]> {
+  let query = supabase
     .from('accounting_rules')
     .select('*')
-    .or(`user_id.eq.${userId},user_id.is.null`)
     .order('created_at', { ascending: false });
+
+  query = tenantId
+    ? query.or(`tenant_id.eq.${tenantId},tenant_id.is.null`)
+    : query.or(`user_id.eq.${userId},user_id.is.null`);
+
+  const { data, error } = await query;
 
   if (error) throw error;
   return (data || []) as AccountingRule[];
 }
 
-export async function createRule(userId: string, input: Partial<AccountingRule>): Promise<AccountingRule> {
+export async function createRule(userId: string, input: Partial<AccountingRule>, tenantId?: string): Promise<AccountingRule> {
   const { data, error } = await supabase
     .from('accounting_rules')
     .insert({
       user_id: userId,
+      tenant_id: tenantId || null,
       merchant_pattern: input.merchant_pattern || null,
       keyword_pattern: input.keyword_pattern || null,
       purpose_pattern: input.purpose_pattern || null,
@@ -131,14 +143,15 @@ export async function createRule(userId: string, input: Partial<AccountingRule>)
   return data as AccountingRule;
 }
 
-export async function updateRule(userId: string, id: string, input: Partial<AccountingRule>): Promise<AccountingRule> {
-  const { data, error } = await supabase
+export async function updateRule(userId: string, id: string, input: Partial<AccountingRule>, tenantId?: string): Promise<AccountingRule> {
+  let query = supabase
     .from('accounting_rules')
     .update(input)
-    .eq('id', id)
-    .eq('user_id', userId)
-    .select()
-    .single();
+    .eq('id', id);
+
+  query = tenantId ? query.eq('tenant_id', tenantId) : query.eq('user_id', userId);
+
+  const { data, error } = await query.select().single();
 
   if (error) throw error;
   return data as AccountingRule;
