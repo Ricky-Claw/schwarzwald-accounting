@@ -9,6 +9,7 @@ import {
   ChevronRight, LogOut, Trash2, Users, BookOpen, Building2, FileSpreadsheet
 } from 'lucide-react';
 import Link from 'next/link';
+import { GlowCard } from '@/components/ui/spotlight-card';
 
 interface Receipt {
   id: string;
@@ -237,18 +238,26 @@ function ActionCard({ href, icon, title, text, tone, index }: {
         transition={{ delay: index * 0.04 }}
         whileHover={{ y: -5, scale: 1.015 }}
         whileTap={{ scale: 0.98 }}
-        className={`group h-full rounded-3xl bg-gradient-to-br ${tones[tone]} border p-5 shadow-sm hover:shadow-xl hover:shadow-emerald-950/5 transition-all cursor-pointer`}
+        className="h-full"
       >
-        <div className="flex items-start justify-between gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-white/80 shadow-inner flex items-center justify-center">
-            {icon}
+        <GlowCard
+          customSize
+          glowColor={tone === 'gold' ? 'orange' : 'green'}
+          className={`group h-full min-h-[150px] bg-gradient-to-br ${tones[tone]} p-5 hover:shadow-xl hover:shadow-emerald-950/5 transition-all cursor-pointer`}
+        >
+          <div className="relative z-10 flex h-full flex-col justify-between">
+            <div className="flex items-start justify-between gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-white/80 shadow-inner flex items-center justify-center">
+                {icon}
+              </div>
+              <ChevronRight className="w-4 h-4 opacity-35 group-hover:opacity-80 group-hover:translate-x-0.5 transition-all" />
+            </div>
+            <div className="mt-5">
+              <h3 className="font-semibold text-slate-950">{title}</h3>
+              <p className="text-sm text-slate-500 mt-1">{text}</p>
+            </div>
           </div>
-          <ChevronRight className="w-4 h-4 opacity-35 group-hover:opacity-80 group-hover:translate-x-0.5 transition-all" />
-        </div>
-        <div className="mt-5">
-          <h3 className="font-semibold text-slate-950">{title}</h3>
-          <p className="text-sm text-slate-500 mt-1">{text}</p>
-        </div>
+        </GlowCard>
       </motion.div>
     </Link>
   );
@@ -272,8 +281,8 @@ function StatCard({
   };
 
   return (
-    <div className={`rounded-3xl p-5 border shadow-sm hover:-translate-y-0.5 hover:shadow-lg transition-all ${variantStyles[variant]}`}>
-      <div className="flex items-center gap-3">
+    <GlowCard customSize glowColor={variant === 'warning' ? 'orange' : 'green'} className={`p-5 hover:-translate-y-0.5 hover:shadow-lg transition-all ${variantStyles[variant]}`}>
+      <div className="relative z-10 flex items-center gap-3">
         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
           variant === 'success' ? 'bg-emerald-100 text-emerald-700' :
           variant === 'warning' ? 'bg-amber-100 text-amber-700' :
@@ -286,7 +295,7 @@ function StatCard({
           <div className="text-sm text-slate-500">{label}</div>
         </div>
       </div>
-    </div>
+    </GlowCard>
   );
 }
 

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Building2, Calendar, CheckCircle, FileSpreadsheet, Loader2, Trash2, Upload } from 'lucide-react';
+import { GlowCard } from '@/components/ui/spotlight-card';
 
 type Statement = {
   id: string;
@@ -154,5 +155,5 @@ function InfoCard({ icon, label, value, tone = 'default' }: { icon: React.ReactN
     green: 'bg-emerald-50/90 border-emerald-200/80 text-emerald-800',
     gold: 'bg-amber-50/90 border-amber-200/80 text-amber-800',
   };
-  return <div className={`rounded-3xl border shadow-sm p-5 ${styles[tone]}`}><div className="flex items-center gap-3"><div className="w-11 h-11 rounded-2xl bg-white/75 flex items-center justify-center">{icon}</div><div><div className="text-2xl font-semibold text-slate-950">{value}</div><div className="text-sm text-slate-500">{label}</div></div></div></div>;
+  return <GlowCard customSize glowColor={tone === 'gold' ? 'orange' : 'green'} className={`p-5 ${styles[tone]}`}><div className="relative z-10 flex items-center gap-3"><div className="w-11 h-11 rounded-2xl bg-white/75 flex items-center justify-center">{icon}</div><div><div className="text-2xl font-semibold text-slate-950">{value}</div><div className="text-sm text-slate-500">{label}</div></div></div></GlowCard>;
 }
