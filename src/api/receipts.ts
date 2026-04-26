@@ -6,7 +6,6 @@
 import { Router } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import multer from 'multer';
-import crypto from 'crypto';
 import { extractReceiptData } from '../services/ocr.service.js';
 import { extractReceiptDataWithKimi, isKimiOCRAvailable } from '../services/ocr-kimi.service.js';
 import { EXPENSE_CATEGORIES, autoCategorize, generateFileName } from '../types/categories.js';
@@ -28,14 +27,6 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB max
   }
 });
-
-// ============================================
-// HELPER: File Hash für Duplikat-Erkennung
-// (optional - wird nicht in DB gespeichert wenn Spalte fehlt)
-// ============================================
-function calculateFileHash(buffer: Buffer): string {
-  return crypto.createHash('sha256').update(buffer).digest('hex');
-}
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
