@@ -4,11 +4,19 @@
 // ============================================
 
 import { createClient } from '@supabase/supabase-js';
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../types/categories.js';
 // BankTransaction type not currently used
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_KEY!
+);
+
+const CATEGORY_BY_SKR04 = new Map(
+  [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES].map(category => [
+    category.skr04Code,
+    { code: category.skr04Code, name: category.name, vat_rate: category.vatRate }
+  ])
 );
 
 export interface ExportOptions {
@@ -56,11 +64,12 @@ export async function generateExport(
   const { year, month, format, includeIncomplete, comment } = options;
   
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
   
   const { data: transactions, error } = await supabase
     .from('bank_transactions')
-    .select(`*, receipt:receipt_id (*), category:category_id (*)`)
+    .select('*')
     .eq('user_id', userId)
     .gte('transaction_date', startDate)
     .lte('transaction_date', endDate)
@@ -68,7 +77,22 @@ export async function generateExport(
 
   if (error) throw error;
 
-  const txs = transactions || [];
+  const baseTxs = transactions || [];
+  const receiptIds = baseTxs.map(t => t.receipt_id).filter(Boolean);
+
+  const { data: receipts, error: receiptsError } = receiptIds.length > 0
+    ? await supabase.from('receipts').select('*').in('id', receiptIds)
+    : { data: [], error: null };
+
+  if (receiptsError) throw receiptsError;
+
+  const receiptMap = new Map((receipts || []).map(receipt => [receipt.id, receipt]));
+  const txs = baseTxs.map(tx => {
+    const receipt = tx.receipt_id ? receiptMap.get(tx.receipt_id) : undefined;
+    const category = receipt?.skr04_code ? CATEGORY_BY_SKR04.get(receipt.skr04_code) : undefined;
+
+    return { ...tx, receipt, category };
+  });
   const missingReceipts = txs.filter(t => t.amount < 0 && !t.receipt_id);
   
   if (missingReceipts.length > 0 && !includeIncomplete) {
