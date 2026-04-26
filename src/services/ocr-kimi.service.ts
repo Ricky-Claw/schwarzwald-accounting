@@ -33,9 +33,10 @@ async function callKimi(messages: KimiMessage[], maxTokens: number = 1000): Prom
       'Authorization': `Bearer ${MOONSHOT_API_KEY}`
     },
     body: JSON.stringify({
-      model: 'kimi-k2.5',
+      model: 'kimi-k2.6',
       messages,
-      temperature: 0.3,
+      // Moonshot currently only accepts temperature=1 for Kimi K2.x models.
+      temperature: 1,
       max_tokens: maxTokens
     })
   });
@@ -47,6 +48,34 @@ async function callKimi(messages: KimiMessage[], maxTokens: number = 1000): Prom
 
   const result: any = await response.json();
   return result.choices?.[0]?.message?.content || '';
+}
+
+function parseAmount(value: unknown): number | undefined {
+  if (typeof value === 'number') return value;
+  if (typeof value !== 'string') return undefined;
+
+  const normalized = value
+    .replace(/[^\d,.-]/g, '')
+    .replace(/\.(?=\d{3}(\D|$))/g, '')
+    .replace(',', '.');
+
+  const parsed = Number.parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function normalizeDate(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+
+  const iso = value.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return iso[0];
+
+  const german = value.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  if (german) {
+    const [, day, month, year] = german;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+
+  return undefined;
 }
 
 /** Parsed JSON aus Kimi Response */
@@ -95,28 +124,24 @@ export async function extractReceiptDataWithKimi(
     const dataUrl = createDataUrl(fileBuffer, mimeType);
     const isPdf = mimeType === 'application/pdf';
 
-    const systemPrompt = 'Du bist ein OCR-Assistent für Buchhaltungsbelege. Extrahiere strukturierte Daten aus dem Dokument.';
+    const systemPrompt = 'Du bist ein OCR-Assistent für Buchhaltungsbelege. Antworte ausschließlich mit kompaktem JSON.';
 
-    const prompt = `Analysiere diesen ${isPdf ? 'PDF-Beleg' : 'Beleg'} und extrahiere folgende Daten im JSON-Format:
+    const prompt = `Extrahiere aus diesem ${isPdf ? 'PDF-Beleg' : 'Beleg'} diese Felder als JSON:
 {
-  "merchant_name": "Name des Händlers/Ladens",
-  "date": "Datum im Format YYYY-MM-DD",
-  "total_amount": Gesamtbetrag als Zahl,
-  "vat_amount": MwSt-Betrag als Zahl (wenn erkennbar),
-  "vat_rate": MwSt-Satz als Zahl z.B. 19 (wenn erkennbar),
-  "currency": "Währung z.B. EUR",
-  "receipt_number": "Belegnummer/Rechnungsnummer",
-  "payment_method": "Zahlungsmethode wenn erkennbar",
-  "invoice_type": "incoming oder outgoing"
+  "merchant_name": "Händlername",
+  "date": "YYYY-MM-DD",
+  "total_amount": 0.00,
+  "vat_amount": 0.00,
+  "vat_rate": 19,
+  "currency": "EUR",
+  "receipt_number": "Rechnungsnummer",
+  "payment_method": "",
+  "invoice_type": "incoming"
 }
-
-WICHTIG: 
-- Die Gesamtsumme ist oft am Ende.
-- Wenn das Datum nicht klar ist, verwende das aktuelle Datum.
-- Gib NUR das JSON zurück, ohne Erklärungen.`;
+Nur JSON. Keine Markdown-Codeblöcke. Zahlen mit Punkt als Dezimaltrenner.`;
 
     const messages = buildVisionMessage([dataUrl], prompt, systemPrompt);
-    const content = await callKimi(messages, 1000);
+    const content = await callKimi(messages, 4000);
 
     console.log('Kimi OCR raw:', content.substring(0, 500));
     const extracted = parseKimiJson(content);
@@ -125,10 +150,10 @@ WICHTIG:
     return {
       success: true,
       merchant_name: extracted.merchant_name,
-      date: extracted.date,
-      total_amount: parseFloat(extracted.total_amount) || 0,
-      vat_amount: parseFloat(extracted.vat_amount) || undefined,
-      vat_rate: parseFloat(extracted.vat_rate) || undefined,
+      date: normalizeDate(extracted.date),
+      total_amount: parseAmount(extracted.total_amount) || 0,
+      vat_amount: parseAmount(extracted.vat_amount),
+      vat_rate: parseAmount(extracted.vat_rate),
       currency: extracted.currency || 'EUR',
       receipt_number: extracted.receipt_number,
       payment_method: extracted.payment_method,
