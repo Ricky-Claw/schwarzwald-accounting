@@ -6,7 +6,7 @@ import { CheckCircle, Loader2, UserPlus } from 'lucide-react';
 
 export default function OnboardingPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-emerald-600" /></div>}>
+    <Suspense fallback={<div className="finance-shell ledger-grid flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-emerald-600" /></div>}>
       <OnboardingContent />
     </Suspense>
   );
@@ -50,8 +50,8 @@ function OnboardingContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md border border-slate-200">
+    <div className="finance-shell ledger-grid flex items-center justify-center p-4">
+      <div className="finance-card shadow-xl p-8 w-full max-w-md border border-slate-200">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-emerald-100 rounded-xl mx-auto mb-4 flex items-center justify-center">
             {done ? <CheckCircle className="w-8 h-8 text-emerald-600" /> : <UserPlus className="w-8 h-8 text-emerald-600" />}
@@ -92,7 +92,7 @@ function OnboardingContent() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-emerald-600 text-white py-2 rounded-lg font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full bg-[#0f6b4f] text-white py-2 rounded-lg font-medium hover:bg-[#0b573f] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               Zugang erstellen

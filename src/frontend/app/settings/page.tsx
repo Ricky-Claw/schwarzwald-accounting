@@ -45,10 +45,10 @@ export default function SettingsPage() {
     finally { setSaving(false); }
   }
 
-  if (!tenant) return <div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,_#dff7ea,_transparent_30%),radial-gradient(circle_at_88%_12%,_#f8e8b9,_transparent_26%),linear-gradient(180deg,#fbfaf5_0%,#eef5ef_100%)] p-8">Lade Firmendaten...</div>;
+  if (!tenant) return <div className="finance-shell ledger-grid p-8">Lade Firmendaten...</div>;
 
-  return <div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,_#dff7ea,_transparent_30%),radial-gradient(circle_at_88%_12%,_#f8e8b9,_transparent_26%),linear-gradient(180deg,#fbfaf5_0%,#eef5ef_100%)]">
-    <header className="bg-[#fbfaf5]/82 backdrop-blur-xl border-b border-emerald-900/10 shadow-sm"><div className="max-w-4xl mx-auto px-6 py-4">
+  return <div className="finance-shell ledger-grid">
+    <header className="finance-header"><div className="max-w-4xl mx-auto px-6 py-4">
       <Link href="/dashboard" className="text-sm text-slate-500 hover:text-slate-800 flex items-center gap-1 mb-2"><ArrowLeft className="w-4 h-4" /> Zurück</Link>
       <h1 className="text-2xl font-semibold text-slate-900 flex items-center gap-2"><Building2 className="w-6 h-6" /> Firmendaten</h1>
       <p className="text-sm text-slate-500">Nur die Daten, die Steuerberater und Export später brauchen.</p>

@@ -102,11 +102,11 @@ export default function UsersPage() {
     }
   }
 
-  if (loading) return <div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,_#dff7ea,_transparent_30%),radial-gradient(circle_at_88%_12%,_#f8e8b9,_transparent_26%),linear-gradient(180deg,#fbfaf5_0%,#eef5ef_100%)] p-8">Lade Benutzer...</div>;
+  if (loading) return <div className="finance-shell ledger-grid p-8">Lade Benutzer...</div>;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,_#dff7ea,_transparent_30%),radial-gradient(circle_at_88%_12%,_#f8e8b9,_transparent_26%),linear-gradient(180deg,#fbfaf5_0%,#eef5ef_100%)]">
-      <header className="bg-[#fbfaf5]/82 backdrop-blur-xl border-b border-emerald-900/10 shadow-sm">
+    <div className="finance-shell ledger-grid">
+      <header className="finance-header">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
             <Link href="/dashboard" className="text-sm text-slate-500 hover:text-slate-800 flex items-center gap-1 mb-2">

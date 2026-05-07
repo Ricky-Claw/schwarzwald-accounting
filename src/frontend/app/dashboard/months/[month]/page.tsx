@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
-  ArrowLeft, Calendar, Receipt, CheckCircle, AlertCircle, 
-  Download, Trash2, FileText, Loader2, Upload, ClipboardCheck
+  ArrowLeft, Calendar, Receipt, CheckCircle, AlertCircle,
+  Download, Trash2, FileText, Loader2, Upload, ClipboardCheck, Edit3, Save, X
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -14,6 +14,9 @@ interface Receipt {
   merchant_name: string;
   receipt_date: string;
   total_amount: number;
+  vat_amount?: number;
+  invoice_number?: string;
+  invoice_type?: string;
   file_name_display: string;
   skr04_code: string;
   status: string;
@@ -29,6 +32,8 @@ interface MissingReceipt {
 
 interface ExportStatus {
   readyForTaxOffice: boolean;
+  review?: { count: number; receipts: Array<{ id: string; merchant_name: string; reasons: string[] }> };
+  checklist?: Array<{ key: string; label: string; ok: boolean }>;
   summary: {
     totalTransactions: number;
     withReceipt: number;
@@ -44,6 +49,10 @@ export default function MonthDetailPage() {
   
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [exportStatus, setExportStatus] = useState<ExportStatus | null>(null);
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; skr04Code: string }>>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Record<string, any>>({});
+  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [monthName, setMonthName] = useState('');
 
@@ -66,22 +75,31 @@ export default function MonthDetailPage() {
   async function fetchReceipts() {
     try {
       const apiKey = 'lanista-secret-key-2024';
+      const tenantId = typeof window !== 'undefined' ? localStorage.getItem('tenantId') : null;
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://lanista-backend.onrender.com';
+      const headers: Record<string, string> = { 'x-api-key': apiKey };
+      if (tenantId) headers['x-tenant-id'] = tenantId;
       
       const response = await fetch(
         `${apiUrl}/api/accounting/receipts?month=${month}`,
-        { headers: { 'x-api-key': apiKey } }
+        { headers }
       );
       const [year, monthNum] = month.split('-');
       const statusResponse = await fetch(
         `${apiUrl}/api/accounting/export/status/${year}/${parseInt(monthNum)}`,
-        { headers: { 'x-api-key': apiKey } }
+        { headers }
       );
+      const categoriesResponse = await fetch(`${apiUrl}/api/accounting/receipts/categories/list`, { headers });
       
       const data = await response.json();
       const statusData = statusResponse.ok ? await statusResponse.json() : null;
+      const categoryData = categoriesResponse.ok ? await categoriesResponse.json() : null;
       setReceipts(data.receipts || []);
       setExportStatus(statusData);
+      setCategories([
+        ...(categoryData?.incoming?.categories || []),
+        ...(categoryData?.outgoing?.categories || []),
+      ]);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -94,11 +112,14 @@ export default function MonthDetailPage() {
     
     try {
       const apiKey = 'lanista-secret-key-2024';
+      const tenantId = typeof window !== 'undefined' ? localStorage.getItem('tenantId') : null;
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://lanista-backend.onrender.com';
+      const headers: Record<string, string> = { 'x-api-key': apiKey };
+      if (tenantId) headers['x-tenant-id'] = tenantId;
       
       await fetch(`${apiUrl}/api/accounting/receipts/${id}`, {
         method: 'DELETE',
-        headers: { 'x-api-key': apiKey }
+        headers
       });
       
       setReceipts(receipts.filter(r => r.id !== id));
@@ -108,22 +129,67 @@ export default function MonthDetailPage() {
     }
   }
 
+  function startEdit(receipt: Receipt) {
+    setEditingId(receipt.id);
+    setEditForm({
+      merchant_name: receipt.merchant_name || '',
+      receipt_date: receipt.receipt_date || '',
+      total_amount: receipt.total_amount || 0,
+      vat_amount: receipt.vat_amount || '',
+      invoice_number: receipt.invoice_number || '',
+      invoice_type: receipt.invoice_type || 'incoming',
+      category_id: '',
+      status: receipt.status || 'verified',
+    });
+  }
+
+  async function saveReceipt(id: string) {
+    setSaving(true);
+    try {
+      const apiKey = 'lanista-secret-key-2024';
+      const tenantId = typeof window !== 'undefined' ? localStorage.getItem('tenantId') : null;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://lanista-backend.onrender.com';
+      const headers: Record<string, string> = { 'Content-Type': 'application/json', 'x-api-key': apiKey };
+      if (tenantId) headers['x-tenant-id'] = tenantId;
+      const body = {
+        ...editForm,
+        total_amount: Number(editForm.total_amount),
+        vat_amount: editForm.vat_amount === '' ? null : Number(editForm.vat_amount),
+        category_id: editForm.category_id || undefined,
+      };
+      const response = await fetch(`${apiUrl}/api/accounting/receipts/${id}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) throw new Error('Save failed');
+      setEditingId(null);
+      await fetchReceipts();
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Korrektur konnte nicht gespeichert werden');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const totalAmount = receipts.reduce((sum, r) => sum + (r.total_amount || 0), 0);
   const matchedCount = receipts.filter(r => r.matched).length;
   const missingReceipts = exportStatus?.summary.missingReceipts || [];
   const totalTransactions = exportStatus?.summary.totalTransactions || 0;
   const readyForTaxOffice = !!exportStatus?.readyForTaxOffice;
+  const reviewCount = exportStatus?.review?.count || 0;
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="finance-shell ledger-grid flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="finance-shell ledger-grid">
       {/* Header */}
       <header className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -142,7 +208,7 @@ export default function MonthDetailPage() {
               </span>
               <Link
                 href={`/export?year=${month.split('-')[0]}&month=${month.split('-')[1]}`}
-                className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors"
+                className="flex items-center gap-2 bg-[#0f6b4f] text-white px-4 py-2 rounded-lg hover:bg-[#0b573f] transition-colors"
               >
                 <Download className="w-4 h-4" />
                 Export
@@ -164,7 +230,7 @@ export default function MonthDetailPage() {
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">
-                  {readyForTaxOffice ? 'Steuerberater-ready' : `${missingReceipts.length} Belege fehlen noch`}
+                  {readyForTaxOffice ? 'Steuerberater-ready' : `${missingReceipts.length} Belege fehlen • ${reviewCount} Prüfungen offen`}
                 </h2>
                 <p className="text-sm text-slate-600 mt-1">
                   {readyForTaxOffice
@@ -183,9 +249,42 @@ export default function MonthDetailPage() {
           </div>
         </div>
 
+        {exportStatus?.checklist && (
+          <div className="finance-card border border-slate-200 p-4 mb-8">
+            <h2 className="font-semibold text-slate-900 mb-3">Monatsabschluss-Checkliste</h2>
+            <div className="grid gap-3 md:grid-cols-4">
+              {exportStatus.checklist.map((item) => (
+                <div key={item.key} className={`rounded-xl p-3 border ${item.ok ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
+                  <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
+                    {item.ok ? <CheckCircle className="w-4 h-4 text-emerald-700" /> : <AlertCircle className="w-4 h-4 text-amber-700" />}
+                    {item.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!!reviewCount && (
+          <div className="finance-card border border-amber-200 mb-8 overflow-hidden">
+            <div className="p-4 border-b border-amber-200 bg-amber-50 font-semibold text-slate-900">Offene Beleg-Prüfungen</div>
+            <div className="divide-y divide-slate-200">
+              {exportStatus?.review?.receipts.map((item) => (
+                <div key={item.id} className="p-4 flex items-center justify-between gap-3">
+                  <div>
+                    <div className="font-medium text-slate-900">{item.merchant_name || 'Unbekannt'}</div>
+                    <div className="text-sm text-amber-700">{item.reasons.join(' • ')}</div>
+                  </div>
+                  <button onClick={() => startEdit(receipts.find(r => r.id === item.id)!)} className="px-3 py-2 rounded-lg bg-slate-900 text-white text-sm">Korrigieren</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl p-4 border border-slate-200">
+          <div className="finance-card p-4 border border-slate-200">
             <div className="text-2xl font-semibold text-slate-900">{totalTransactions}</div>
             <div className="text-sm text-slate-500">Buchungen</div>
           </div>
@@ -197,7 +296,7 @@ export default function MonthDetailPage() {
             <div className="text-2xl font-semibold text-amber-700">{missingReceipts.length}</div>
             <div className="text-sm text-amber-600">Fehlend</div>
           </div>
-          <div className="bg-white rounded-xl p-4 border border-slate-200">
+          <div className="finance-card p-4 border border-slate-200">
             <div className="text-2xl font-semibold text-slate-900">{totalAmount.toFixed(2)} €</div>
             <div className="text-sm text-slate-500">Gesamtbetrag</div>
           </div>
@@ -205,7 +304,7 @@ export default function MonthDetailPage() {
 
         {/* Missing receipts first */}
         {missingReceipts.length > 0 && (
-          <div className="bg-white rounded-xl border border-amber-200 mb-8 overflow-hidden">
+          <div className="finance-card border border-amber-200 mb-8 overflow-hidden">
             <div className="p-4 border-b border-amber-200 bg-amber-50">
               <h2 className="font-semibold text-slate-900 flex items-center gap-2">
                 <AlertCircle className="w-5 h-5 text-amber-600" />
@@ -221,7 +320,7 @@ export default function MonthDetailPage() {
                   </div>
                   <Link
                     href={`/upload?month=${month}&transactionId=${item.id}&date=${item.date}&amount=${item.amount}&description=${encodeURIComponent(item.description)}`}
-                    className="inline-flex items-center justify-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors"
+                    className="inline-flex items-center justify-center gap-2 bg-[#0f6b4f] text-white px-4 py-2 rounded-lg hover:bg-[#0b573f] transition-colors"
                   >
                     <Upload className="w-4 h-4" />
                     passenden Beleg hochladen
@@ -233,7 +332,7 @@ export default function MonthDetailPage() {
         )}
 
         {/* Receipts List */}
-        <div className="bg-white rounded-xl border border-slate-200">
+        <div className="finance-card border border-slate-200">
           <div className="p-4 border-b border-slate-200">
             <h2 className="font-semibold text-slate-900 flex items-center gap-2">
               <Receipt className="w-5 h-5 text-slate-500" />
@@ -260,8 +359,9 @@ export default function MonthDetailPage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: index * 0.05 }}
-                  className="p-4 flex items-center justify-between hover:bg-slate-50"
+                  className="p-4 hover:bg-slate-50"
                 >
+                  <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                       receipt.matched ? 'bg-emerald-100' : 'bg-amber-100'
@@ -298,12 +398,28 @@ export default function MonthDetailPage() {
                       )}
                     </div>
                   </div>
-                  <button
-                    onClick={() => deleteReceipt(receipt.id)}
-                    className="p-2 hover:bg-red-100 rounded-lg text-slate-400 hover:text-red-600 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => startEdit(receipt)} className="p-2 hover:bg-emerald-100 rounded-lg text-slate-400 hover:text-emerald-700 transition-colors" aria-label="Beleg korrigieren"><Edit3 className="w-4 h-4" /></button>
+                    <button onClick={() => deleteReceipt(receipt.id)} className="p-2 hover:bg-red-100 rounded-lg text-slate-400 hover:text-red-600 transition-colors" aria-label="Beleg löschen"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                  </div>
+                  {editingId === receipt.id && (
+                    <div className="mt-4 grid gap-3 md:grid-cols-3 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                      <input className="p-3 border rounded-lg" value={editForm.merchant_name} onChange={e => setEditForm({ ...editForm, merchant_name: e.target.value })} placeholder="Händler" />
+                      <input className="p-3 border rounded-lg" type="date" value={editForm.receipt_date} onChange={e => setEditForm({ ...editForm, receipt_date: e.target.value })} />
+                      <input className="p-3 border rounded-lg" type="number" step="0.01" value={editForm.total_amount} onChange={e => setEditForm({ ...editForm, total_amount: e.target.value })} placeholder="Brutto" />
+                      <input className="p-3 border rounded-lg" type="number" step="0.01" value={editForm.vat_amount} onChange={e => setEditForm({ ...editForm, vat_amount: e.target.value })} placeholder="MwSt" />
+                      <input className="p-3 border rounded-lg" value={editForm.invoice_number} onChange={e => setEditForm({ ...editForm, invoice_number: e.target.value })} placeholder="Rechnungsnummer" />
+                      <select className="p-3 border rounded-lg" value={editForm.category_id} onChange={e => setEditForm({ ...editForm, category_id: e.target.value })}>
+                        <option value="">Kategorie behalten</option>
+                        {categories.map(c => <option key={c.id} value={c.id}>{c.name} · SKR04 {c.skr04Code}</option>)}
+                      </select>
+                      <div className="md:col-span-3 flex justify-end gap-2">
+                        <button onClick={() => setEditingId(null)} className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 inline-flex items-center gap-2"><X className="w-4 h-4" />Abbrechen</button>
+                        <button disabled={saving} onClick={() => saveReceipt(receipt.id)} className="px-4 py-2 rounded-lg bg-[#0f6b4f] text-white inline-flex items-center gap-2 disabled:opacity-60"><Save className="w-4 h-4" />Speichern</button>
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               ))}
             </div>

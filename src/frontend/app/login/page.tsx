@@ -30,17 +30,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+    <div className="finance-shell ledger-grid flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md"
+        className="finance-card shadow-xl p-8 w-full max-w-md"
       >
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-emerald-100 rounded-xl mx-auto mb-4 flex items-center justify-center">
             <Lock className="w-8 h-8 text-emerald-600" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Lanista Buchhaltung</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Lanista Finance Desk</h1>
           <p className="text-slate-500 mt-2">Passwort eingeben</p>
         </div>
 
@@ -71,7 +71,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-emerald-600 text-white py-2 rounded-lg font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full bg-[#0f6b4f] text-white py-2 rounded-lg font-medium hover:bg-[#0b573f] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {loading ? 'Einloggen...' : 'Einloggen'}
             <ArrowRight className="w-4 h-4" />

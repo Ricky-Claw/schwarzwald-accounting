@@ -77,6 +77,33 @@ router.get('/', async (req, res) => {
 });
 
 // ============================================
+// GET /api/accounting/receipts/categories
+// Liste aller Kategorien mit SKR04-Konten
+// Muss vor /:id stehen, sonst wird "categories" als ID gelesen.
+// ============================================
+router.get('/categories/list', async (req, res) => {
+  try {
+    const userId = (req as any).userId as string;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const incoming = EXPENSE_CATEGORIES.filter(c =>
+      !['warenverkauf', 'dienstleistungen', 'sonstige_einnahmen'].includes(c.id)
+    );
+    const outgoing = EXPENSE_CATEGORIES.filter(c =>
+      ['warenverkauf', 'dienstleistungen', 'sonstige_einnahmen'].includes(c.id)
+    );
+
+    res.json({
+      incoming: { name: 'Eingangsrechnungen (Ausgaben)', categories: incoming },
+      outgoing: { name: 'Ausgangsrechnungen (Einnahmen)', categories: outgoing },
+    });
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    res.status(500).json({ error: 'Failed to fetch categories' });
+  }
+});
+
+// ============================================
 // GET /api/accounting/receipts/:id
 // ============================================
 router.get('/:id', async (req, res) => {
@@ -535,33 +562,6 @@ router.get('/months/:year/:month/missing', async (req, res) => {
   } catch (error) {
     console.error('Error fetching missing receipts:', error);
     res.status(500).json({ error: 'Failed to fetch missing receipts' });
-  }
-});
-
-// ============================================
-// GET /api/accounting/receipts/categories
-// Liste aller Kategorien mit SKR04-Konten
-// ============================================
-router.get('/categories/list', async (req, res) => {
-  try {
-    const userId = (req as any).userId as string;
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-
-    // Gruppiere nach Eingang/Ausgang
-    const incoming = EXPENSE_CATEGORIES.filter(c => 
-      !['warenverkauf', 'dienstleistungen', 'sonstige_einnahmen'].includes(c.id)
-    );
-    const outgoing = EXPENSE_CATEGORIES.filter(c => 
-      ['warenverkauf', 'dienstleistungen', 'sonstige_einnahmen'].includes(c.id)
-    );
-
-    res.json({
-      incoming: { name: 'Eingangsrechnungen (Ausgaben)', categories: incoming },
-      outgoing: { name: 'Ausgangsrechnungen (Einnahmen)', categories: outgoing },
-    });
-  } catch (error) {
-    console.error('Error fetching categories:', error);
-    res.status(500).json({ error: 'Failed to fetch categories' });
   }
 });
 

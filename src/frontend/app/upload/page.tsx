@@ -271,9 +271,9 @@ export default function UploadPage() {
   const matchedCount = files.filter((f) => f.result?.matched).length;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,_#dff7ea,_transparent_30%),radial-gradient(circle_at_88%_12%,_#f8e8b9,_transparent_26%),linear-gradient(180deg,#fbfaf5_0%,#eef5ef_100%)]">
+    <div className="finance-shell ledger-grid">
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-[#fbfaf5]/82 backdrop-blur-xl border-b border-emerald-900/10 shadow-sm">
+      <header className="sticky top-0 z-20 finance-header">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <Link href={targetInfo?.month ? `/dashboard/months/${targetInfo.month}` : '/dashboard'} className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-2">
             <ArrowLeft className="w-4 h-4" />
@@ -347,7 +347,7 @@ export default function UploadPage() {
                   onClick={() => setInvoiceType('incoming')}
                   className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
                     invoiceType === 'incoming'
-                      ? 'bg-emerald-600 text-white'
+                      ? 'bg-[#0f6b4f] text-white'
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
@@ -431,7 +431,7 @@ export default function UploadPage() {
               onDragOver={handleDrag}
               onDrop={handleDrop}
               animate={{ scale: dragActive ? 1.01 : 1 }}
-              className={`relative bg-white/85 rounded-3xl border-2 border-dashed p-12 text-center transition-all shadow-sm hover:shadow-xl hover:shadow-emerald-950/5 ${
+              className={`relative finance-card border-2 border-dashed p-12 text-center transition-all shadow-sm hover:shadow-xl hover:shadow-emerald-950/5 ${
                 dragActive ? 'border-emerald-500 bg-emerald-50' : 'border-slate-300'
               }`}
             >
@@ -495,7 +495,7 @@ export default function UploadPage() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="bg-white rounded-2xl p-8 text-center border border-slate-200"
+                  className="finance-card p-8 text-center border border-slate-200"
                 >
                   <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                   <p className="text-slate-500">Noch keine Dateien hochgeladen</p>
@@ -690,7 +690,7 @@ export default function UploadPage() {
                 {targetInfo?.month && (
                   <Link
                     href={`/dashboard/months/${targetInfo.month}`}
-                    className="inline-flex items-center justify-center mt-4 w-full bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors"
+                    className="inline-flex items-center justify-center mt-4 w-full bg-[#0f6b4f] text-white px-4 py-2 rounded-lg hover:bg-[#0b573f] transition-colors"
                   >
                     Zurück zur fehlende-Belege-Liste
                   </Link>

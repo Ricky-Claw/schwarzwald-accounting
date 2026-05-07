@@ -3,51 +3,87 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 31, 41, 55;
-  --background-rgb: 248, 250, 252;
-  --primary: 6, 95, 70;
-  --primary-light: 209, 250, 229;
+  --ink: #08141f;
+  --ink-2: #102436;
+  --ledger: #0f6b4f;
+  --ledger-2: #14a06f;
+  --paper: #f7f2e8;
+  --paper-2: #fffaf0;
+  --line: rgba(8, 20, 31, 0.12);
+  --gold: #b9892b;
+  --danger: #9f322f;
+  --warning: #b7791f;
+  --success: #0f6b4f;
+  --foreground-rgb: 8, 20, 31;
+  --background-rgb: 247, 242, 232;
+  --primary: 15, 107, 79;
+  --primary-light: 219, 245, 235;
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
-
-html,
+* { box-sizing: border-box; padding: 0; margin: 0; }
+html, body { max-width: 100vw; overflow-x: hidden; }
 body {
-  max-width: 100vw;
-  overflow-x: hidden;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(20,160,111,.14), transparent 28%),
+    radial-gradient(circle at 88% 8%, rgba(185,137,43,.18), transparent 30%),
+    linear-gradient(180deg, #fbf7ee 0%, #f3ede0 48%, #eaf0ea 100%);
+  font-feature-settings: "tnum" 1, "ss01" 1;
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-rgb));
-}
+::selection { background: #dbf5eb; color: var(--ledger); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #eee6d7; }
+::-webkit-scrollbar-thumb { background: #b8ad9b; border-radius: 999px; border: 2px solid #eee6d7; }
+::-webkit-scrollbar-thumb:hover { background: #887c6a; }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* Selection styling */
-::selection {
-  background: rgb(var(--primary-light));
-  color: rgb(var(--primary));
+@layer components {
+  .finance-shell {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 10% 4%, rgba(20,160,111,.16), transparent 28%),
+      radial-gradient(circle at 92% 10%, rgba(185,137,43,.20), transparent 26%),
+      linear-gradient(180deg, #fbf7ee 0%, #f3ede0 52%, #eaf0ea 100%);
+  }
+  .finance-header {
+    background: rgba(251, 247, 238, .82);
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid rgba(8,20,31,.10);
+    box-shadow: 0 10px 40px rgba(8,20,31,.06);
+  }
+  .finance-card {
+    background: linear-gradient(180deg, rgba(255,250,240,.92), rgba(255,255,255,.78));
+    border: 1px solid rgba(8,20,31,.10);
+    box-shadow: 0 22px 70px rgba(8,20,31,.08);
+    border-radius: 28px;
+  }
+  .finance-card-dark {
+    color: #fffaf0;
+    background:
+      radial-gradient(circle at 86% 10%, rgba(185,137,43,.30), transparent 32%),
+      linear-gradient(135deg, #07131f 0%, #0d2637 48%, #0f6b4f 130%);
+    border: 1px solid rgba(255,250,240,.13);
+    box-shadow: 0 28px 80px rgba(8,20,31,.24);
+    border-radius: 32px;
+  }
+  .finance-button-primary {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    border-radius: 999px; background: #0f6b4f; color: white; font-weight: 700;
+    padding: .8rem 1.15rem; box-shadow: 0 14px 30px rgba(15,107,79,.20);
+    transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+  }
+  .finance-button-primary:hover { background: #0b573f; transform: translateY(-1px); box-shadow: 0 18px 36px rgba(15,107,79,.26); }
+  .finance-button-secondary {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    border-radius: 999px; background: rgba(255,250,240,.78); color: #102436; font-weight: 700;
+    padding: .8rem 1.15rem; border: 1px solid rgba(8,20,31,.12);
+    transition: transform .18s ease, background .18s ease;
+  }
+  .finance-button-secondary:hover { background: white; transform: translateY(-1px); }
+  .finance-kicker { color: #0f6b4f; font-size: .78rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+  .finance-badge { border-radius: 999px; padding: .35rem .65rem; font-size: .75rem; font-weight: 800; border: 1px solid rgba(8,20,31,.10); }
+  .ledger-grid {
+    background-image: linear-gradient(rgba(8,20,31,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(8,20,31,.055) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
 }

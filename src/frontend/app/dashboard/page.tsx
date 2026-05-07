@@ -109,22 +109,22 @@ export default function DashboardPage() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,_#dff7ea,_transparent_30%),radial-gradient(circle_at_88%_12%,_#f8e8b9,_transparent_26%),linear-gradient(180deg,#fbfaf5_0%,#eef5ef_100%)]">
+    <div className="finance-shell ledger-grid">
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-[#fbfaf5]/82 backdrop-blur-xl border-b border-emerald-900/10 shadow-sm">
+      <header className="sticky top-0 z-20 finance-header">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-700 to-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-900/10">
+              <div className="w-11 h-11 rounded-2xl bg-[#08141f] text-[#f7f2e8] flex items-center justify-center shadow-lg shadow-slate-950/20">
                 <Receipt className="w-5 h-5" />
               </div>
               <div>
-                <h1 className="text-2xl font-semibold text-slate-950 tracking-tight">Lanista Buchhaltung</h1>
-                <p className="text-slate-500 text-sm">Belege prüfen, Regeln lernen, Export vorbereiten.</p>
+                <h1 className="text-2xl font-semibold text-slate-950 tracking-tight">Lanista Finance Desk</h1>
+                <p className="text-slate-500 text-sm">Steuerberater-ready Buchhaltung für echte Monatsabschlüsse.</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 text-emerald-700 bg-emerald-50/90 border border-emerald-100 px-4 py-2 rounded-full">
+              <div className="hidden sm:flex items-center gap-2 text-emerald-900 bg-emerald-50/90 border border-emerald-900/10 px-4 py-2 rounded-full">
                 <CheckCircle className="w-5 h-5" />
                 <span className="text-sm font-medium">System aktiv</span>
               </div>
@@ -149,19 +149,19 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45 }}
-            className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-gradient-to-br from-emerald-950 via-emerald-800 to-[#7a5b12] p-8 text-white shadow-2xl shadow-emerald-950/15"
+            className="finance-card-dark relative overflow-hidden p-8"
           >
             <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-gold-300/20 blur-3xl" />
             <div className="absolute right-10 bottom-8 h-28 w-28 rounded-full border border-white/10" />
             <div className="relative z-10 max-w-2xl">
-              <p className="text-sm font-medium text-emerald-100/85 mb-3">Aktueller Arbeitsstand</p>
+              <p className="text-sm font-medium text-emerald-100/85 mb-3">Monatsabschluss-Cockpit</p>
               <h2 className="text-4xl font-semibold tracking-tight mb-3">{stats?.missingReceipts ? `${stats.missingReceipts} Belege fehlen noch` : 'Alles bereit für den Export'}</h2>
-              <p className="text-emerald-50/80 leading-relaxed mb-7">Der schnellste Weg: fehlende Belege hochladen, Regeln prüfen, danach DATEV/CSV exportieren.</p>
+              <p className="text-emerald-50/80 leading-relaxed mb-7">Alles auf einen Blick: Beleglage, Prüfstatus, Regeln und Steuerberater-Paket. Kein Sortierchaos mehr am Monatsende.</p>
               <div className="flex flex-wrap gap-3">
-                <Link href="/upload" className="inline-flex items-center gap-2 rounded-full bg-white text-emerald-900 px-5 py-3 text-sm font-semibold shadow-lg hover:-translate-y-0.5 hover:shadow-xl transition-all">
+                <Link href="/upload" className="inline-flex items-center gap-2 finance-button-secondary text-sm">
                   <Upload className="w-4 h-4" /> Beleg hochladen
                 </Link>
-                <Link href="/export" className="inline-flex items-center gap-2 rounded-full bg-white/12 text-white border border-white/20 px-5 py-3 text-sm font-semibold hover:bg-white/18 transition-all">
+                <Link href="/export" className="inline-flex items-center gap-2 rounded-full bg-white/10 text-white border border-white/20 px-5 py-3 text-sm font-semibold hover:bg-white/20 transition-all">
                   <Download className="w-4 h-4" /> Export öffnen
                 </Link>
               </div>
@@ -179,8 +179,8 @@ export default function DashboardPage() {
         <section className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-slate-950">Arbeitsbereiche</h2>
-              <p className="text-sm text-slate-500">Alles Nötige, in der Reihenfolge des Buchhaltungsflusses.</p>
+              <h2 className="text-lg font-semibold text-slate-950">Buchhaltungsfluss</h2>
+              <p className="text-sm text-slate-500">Von Rohbeleg bis sauberem Steuerberater-Paket.</p>
             </div>
             <div className="hidden md:flex items-center gap-2 text-sm text-slate-500">
               <TrendingUp className="w-4 h-4 text-emerald-700" /> {completionRate}% zugeordnet
@@ -203,7 +203,7 @@ export default function DashboardPage() {
         <div className="mt-8">
           <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
             <Calendar className="w-5 h-5 text-slate-500" />
-            Übersicht nach Monat
+            Monatsabschlüsse
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -275,9 +275,9 @@ function StatCard({
   variant?: 'default' | 'success' | 'warning';
 }) {
   const variantStyles = {
-    default: 'bg-white/80 border-white/80',
-    success: 'bg-emerald-50/90 border-emerald-200/80',
-    warning: 'bg-amber-50/95 border-amber-200/90',
+    default: 'bg-[#fffaf0]/90 border-slate-900/10',
+    success: 'bg-emerald-50/95 border-emerald-900/10',
+    warning: 'bg-amber-50/95 border-amber-900/10',
   };
 
   return (
@@ -322,7 +322,7 @@ function MonthCard({ month, index }: { month: MonthStatus; index: number }) {
       transition={{ delay: index * 0.05 }}
       onClick={handleClick}
       whileHover={{ y: -3, scale: 1.01 }}
-      className={`rounded-2xl p-5 border shadow-sm cursor-pointer hover:shadow-lg transition-all ${config.bg} ${config.border}`}
+      className={`rounded-[1.4rem] p-5 border shadow-sm cursor-pointer hover:shadow-xl transition-all ${config.bg} ${config.border}`}
     >
       <div className="flex items-start justify-between mb-3">
         <div>
@@ -481,7 +481,7 @@ function RecentUploadsSection() {
 
   if (loading) {
     return (
-      <div className="bg-white/85 rounded-3xl p-6 border border-white/80 shadow-sm">
+      <div className="finance-card p-6">
         <h2 className="text-lg font-semibold text-slate-900 mb-4">Neueste Uploads</h2>
         <div className="animate-pulse space-y-3">
           {[1, 2, 3].map(i => (
@@ -497,7 +497,7 @@ function RecentUploadsSection() {
   }
 
   return (
-    <div className="bg-white/85 rounded-3xl p-6 border border-white/80 shadow-sm">
+    <div className="finance-card p-6">
       <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
         <Receipt className="w-5 h-5 text-slate-500" />
         Neueste Uploads

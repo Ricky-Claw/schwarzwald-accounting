@@ -67,12 +67,12 @@ export default function StatementsPage() {
   const processed = statements.filter(s => s.status === 'processed').length;
 
   if (loading) {
-    return <div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,_#dff7ea,_transparent_30%),radial-gradient(circle_at_88%_12%,_#f8e8b9,_transparent_26%),linear-gradient(180deg,#fbfaf5_0%,#eef5ef_100%)] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-emerald-700" /></div>;
+    return <div className="finance-shell ledger-grid flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-emerald-700" /></div>;
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,_#dff7ea,_transparent_30%),radial-gradient(circle_at_88%_12%,_#f8e8b9,_transparent_26%),linear-gradient(180deg,#fbfaf5_0%,#eef5ef_100%)]">
-      <header className="sticky top-0 z-20 bg-[#fbfaf5]/82 backdrop-blur-xl border-b border-emerald-900/10 shadow-sm">
+    <div className="finance-shell ledger-grid">
+      <header className="sticky top-0 z-20 finance-header">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <Link href="/dashboard" className="text-sm text-slate-500 hover:text-slate-800 flex items-center gap-1 mb-2">
             <ArrowLeft className="w-4 h-4" /> Zurück
@@ -98,7 +98,7 @@ export default function StatementsPage() {
           <InfoCard icon={<Building2 className="w-5 h-5" />} label="Buchungen" value={totalTransactions} tone="gold" />
         </section>
 
-        <section className="bg-white/85 rounded-3xl border border-white/80 shadow-sm p-6">
+        <section className="finance-card border border-white/80 shadow-sm p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="font-semibold text-slate-950">Alle Kontoauszüge</h2>

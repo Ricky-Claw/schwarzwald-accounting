@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { Download, AlertCircle, CheckCircle, FileText, Calendar, ArrowLeft, Loader2, Upload, MessageSquare, Lightbulb } from 'lucide-react';
+import { Download, AlertCircle, CheckCircle, FileText, Calendar, ArrowLeft, Loader2, Upload, MessageSquare, Lightbulb, Package } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
@@ -28,7 +28,7 @@ interface ExportStatus {
 
 export default function ExportPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,_#dff7ea,_transparent_30%),radial-gradient(circle_at_88%_12%,_#f8e8b9,_transparent_26%),linear-gradient(180deg,#fbfaf5_0%,#eef5ef_100%)] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-emerald-700" /></div>}>
+    <Suspense fallback={<div className="finance-shell ledger-grid flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-emerald-700" /></div>}>
       <ExportContent />
     </Suspense>
   );
@@ -47,6 +47,7 @@ function ExportContent() {
   const [status, setStatus] = useState<ExportStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [packageDownloading, setPackageDownloading] = useState(false);
 
   useEffect(() => {
     fetchStatus();
@@ -58,7 +59,7 @@ function ExportContent() {
     const apiKey = localStorage.getItem('apiKey') || 'lanista-secret-key-2024';
     try {
       const response = await fetch(`${apiUrl}/api/accounting/export/status/${year}/${month}`, {
-        headers: { 'x-api-key': apiKey }
+        headers: { 'x-api-key': apiKey, ...(localStorage.getItem('tenantId') ? { 'x-tenant-id': localStorage.getItem('tenantId') as string } : {}) }
       });
       if (!response.ok) {
         console.error('Export status API error:', response.status);
@@ -75,14 +76,44 @@ function ExportContent() {
     }
   }
 
+  async function handlePackageExport() {
+    setPackageDownloading(true);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://lanista-backend.onrender.com';
+    const apiKey = localStorage.getItem('apiKey') || 'lanista-secret-key-2024';
+    const tenantId = localStorage.getItem('tenantId');
+    try {
+      const response = await fetch(`${apiUrl}/api/accounting/export/package`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, ...(tenantId ? { 'x-tenant-id': tenantId } : {}) },
+        body: JSON.stringify({ year: parseInt(year), month: parseInt(month), comment: comment || undefined }),
+      });
+      if (!response.ok) throw new Error('Package export failed');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Lanista_Steuerberaterpaket_${year}_${month.padStart(2, '0')}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Package export error:', error);
+      alert('Steuerberater-Paket konnte nicht erstellt werden');
+    } finally {
+      setPackageDownloading(false);
+    }
+  }
+
   async function handleExport() {
     setDownloading(true);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://lanista-backend.onrender.com';
     const apiKey = localStorage.getItem('apiKey') || 'lanista-secret-key-2024';
+    const tenantId = localStorage.getItem('tenantId');
     try {
       const response = await fetch(`${apiUrl}/api/accounting/export`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, ...(tenantId ? { 'x-tenant-id': tenantId } : {}) },
         body: JSON.stringify({
           year: parseInt(year),
           month: parseInt(month),
@@ -128,9 +159,9 @@ function ExportContent() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,_#dff7ea,_transparent_30%),radial-gradient(circle_at_88%_12%,_#f8e8b9,_transparent_26%),linear-gradient(180deg,#fbfaf5_0%,#eef5ef_100%)]">
+    <div className="finance-shell ledger-grid">
       {/* Header */}
-      <header className="bg-[#fbfaf5]/82 backdrop-blur-xl border-b border-emerald-900/10 shadow-sm">
+      <header className="finance-header">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <Link href="/dashboard" className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-2">
             <ArrowLeft className="w-4 h-4" />
@@ -176,7 +207,7 @@ function ExportContent() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200"
+              className="finance-card p-6 shadow-sm border border-slate-200"
             >
               <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-slate-500" />
@@ -216,7 +247,7 @@ function ExportContent() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200"
+              className="finance-card p-6 shadow-sm border border-slate-200"
             >
               <h2 className="text-lg font-semibold text-slate-900 mb-4">Format</h2>
               <div className="space-y-3">
@@ -256,7 +287,7 @@ function ExportContent() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200"
+              className="finance-card p-6 shadow-sm border border-slate-200"
             >
               <h2 className="text-lg font-semibold text-slate-900 mb-4">Optionen</h2>
               
@@ -302,7 +333,7 @@ function ExportContent() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 h-full"
+              className="finance-card p-6 shadow-sm border border-slate-200 h-full"
             >
               <h2 className="text-lg font-semibold text-slate-900 mb-6">Vorschau</h2>
 
@@ -413,7 +444,7 @@ function ExportContent() {
                     className={`w-full py-4 rounded-lg font-semibold text-lg flex items-center justify-center gap-3 transition-colors ${
                       !includeIncomplete && !status?.readyForTaxOffice
                         ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                        : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                        : 'bg-[#0f6b4f] text-white hover:bg-[#0b573f]'
                     }`}
                   >
                     {downloading ? (
@@ -430,6 +461,20 @@ function ExportContent() {
                           ? 'Unvollständig exportieren'
                           : 'Bitte Belege ergänzen'}
                       </>
+                    )}
+                  </motion.button>
+
+                  <motion.button
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    onClick={handlePackageExport}
+                    disabled={packageDownloading || loading}
+                    className="w-full mt-3 py-4 rounded-lg font-semibold text-lg flex items-center justify-center gap-3 transition-colors bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {packageDownloading ? (
+                      <><Loader2 className="w-5 h-5 animate-spin" /> Paket wird erstellt...</>
+                    ) : (
+                      <><Package className="w-5 h-5" /> Steuerberater-Paket als ZIP</>
                     )}
                   </motion.button>
                 </div>
