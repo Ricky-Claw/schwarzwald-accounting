@@ -5,8 +5,8 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Lanista Buchhaltung',
-  description: 'Professionelle Buchhaltung einfach gemacht',
+  title: 'Lanista Finance Desk',
+  description: 'Steuerberater-ready Buchhaltung für Monatsabschlüsse',
 };
 
 export const viewport: Viewport = {
