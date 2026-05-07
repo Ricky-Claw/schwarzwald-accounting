@@ -15,7 +15,6 @@ jobs:
     environment: production
     env:
       HAS_VPS: ${{ secrets.VPS_HOST != '' && secrets.VPS_USER != '' && secrets.VPS_SSH_KEY != '' }}
-      HAS_DATABASE_URL: ${{ secrets.DATABASE_URL != '' }}
     
     steps:
       - uses: actions/checkout@v4
@@ -45,12 +44,6 @@ jobs:
             npm run build
             pm2 restart accounting-api || pm2 start dist/app.js --name accounting-api
             pm2 save
-
-      - name: Run migrations
-        if: env.HAS_DATABASE_URL == 'true'
-        run: npm run db:migrate
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
   deploy-frontend:
     runs-on: ubuntu-latest
