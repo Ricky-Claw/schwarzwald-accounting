@@ -84,8 +84,10 @@ export async function generateExport(
   const baseTxs = transactions || [];
   const receiptIds = baseTxs.map(t => t.receipt_id).filter(Boolean);
 
+  let receiptsQuery = supabase.from('receipts').select('*').in('id', receiptIds.length ? receiptIds : ['00000000-0000-0000-0000-000000000000']);
+  receiptsQuery = tenantId ? receiptsQuery.eq('tenant_id', tenantId) : receiptsQuery.eq('user_id', userId);
   const { data: receipts, error: receiptsError } = receiptIds.length > 0
-    ? await supabase.from('receipts').select('*').in('id', receiptIds)
+    ? await receiptsQuery
     : { data: [], error: null };
 
   if (receiptsError) throw receiptsError;

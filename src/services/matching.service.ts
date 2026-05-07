@@ -138,14 +138,35 @@ export async function matchReceiptToTransaction(
   tenantId?: string
 ): Promise<boolean> {
   try {
-    // Update Receipt
-    const { error: receiptError } = await supabase
+    let receiptCheck = supabase
+      .from('receipts')
+      .select('id, bank_transaction_id')
+      .eq('id', receiptId);
+    receiptCheck = tenantId ? receiptCheck.eq('tenant_id', tenantId) : receiptCheck.eq('user_id', userId);
+    const { data: receipt, error: receiptLookupError } = await receiptCheck.single();
+    if (receiptLookupError || !receipt) throw receiptLookupError || new Error('Receipt not found in scope');
+
+    let transactionCheck = supabase
+      .from('bank_transactions')
+      .select('id, receipt_id')
+      .eq('id', transactionId);
+    transactionCheck = tenantId ? transactionCheck.eq('tenant_id', tenantId) : transactionCheck.eq('user_id', userId);
+    const { data: transaction, error: transactionLookupError } = await transactionCheck.single();
+    if (transactionLookupError || !transaction) throw transactionLookupError || new Error('Transaction not found in scope');
+
+    if (transaction.receipt_id && transaction.receipt_id !== receiptId) {
+      throw new Error('Transaction already matched to another receipt');
+    }
+
+    let receiptUpdate = supabase
       .from('receipts')
       .update({
         bank_transaction_id: transactionId,
         status: 'verified',
       })
       .eq('id', receiptId);
+    receiptUpdate = tenantId ? receiptUpdate.eq('tenant_id', tenantId) : receiptUpdate.eq('user_id', userId);
+    const { error: receiptError } = await receiptUpdate;
 
     if (receiptError) throw receiptError;
 
@@ -162,7 +183,15 @@ export async function matchReceiptToTransaction(
 
     const { error: transError } = await transQuery;
 
-    if (transError) throw transError;
+    if (transError) {
+      let rollbackQuery = supabase
+        .from('receipts')
+        .update({ bank_transaction_id: receipt.bank_transaction_id || null })
+        .eq('id', receiptId);
+      rollbackQuery = tenantId ? rollbackQuery.eq('tenant_id', tenantId) : rollbackQuery.eq('user_id', userId);
+      await rollbackQuery;
+      throw transError;
+    }
 
     return true;
   } catch (error) {
@@ -256,10 +285,12 @@ export async function getMonthlyOverview(
   
   // Hole zugehörige Belege separat
   const receiptIds = (transactions || []).map(t => t.receipt_id).filter(Boolean);
-  const { data: receipts } = await supabase
+  let receiptsQuery = supabase
     .from('receipts')
     .select('*')
-    .in('id', receiptIds);
+    .in('id', receiptIds.length ? receiptIds : ['00000000-0000-0000-0000-000000000000']);
+  receiptsQuery = tenantId ? receiptsQuery.eq('tenant_id', tenantId) : receiptsQuery.eq('user_id', userId);
+  const { data: receipts } = await receiptsQuery;
 
   if (error) throw error;
 

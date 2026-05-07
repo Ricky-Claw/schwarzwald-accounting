@@ -245,16 +245,15 @@ async function processStatement(
 
     // Insert transactions
     if (transactions.length > 0) {
-      const { error } = await supabase.from('bank_transactions').insert(
-        transactions.map((t) => ({
+      const rows = transactions.map((t) => ({
           ...t,
           statement_id: statementId,
           user_id: userId,
           tenant_id: tenantId,
           status: 'unmatched',
           is_split: false,
-        }))
-      );
+        }));
+      const { error } = await supabase.from('bank_transactions').insert(rows);
 
       if (error) throw error;
     }
@@ -309,13 +308,15 @@ function parseCSV(content: string): Partial<BankTransaction>[] {
   const records = parse(content, {
     columns: true,
     skip_empty_lines: true,
-    delimiter: ';', // German CSV uses semicolon
+    delimiter: detectDelimiter(content),
+    bom: true,
+    trim: true,
   });
 
   return records.map((record: any) => ({
     transaction_date: parseDate(record.Buchungstag || record.Date || record.Datum),
     booking_date: parseDate(record.Valutadatum || record['Value Date']),
-    amount: parseAmount(record.Betrag || record.Amount || record['Gutschrift in EUR']),
+    amount: parseCsvAmount(record),
     currency: record.Währung || record.Currency || 'EUR',
     description: record.Verwendungszweck || record.Description || record.Buchungstext,
     counterparty_name: record.Auftraggeber || record.Name || record.Beguenstigter,
@@ -328,16 +329,35 @@ async function parseCAMT(xmlContent: string): Promise<Partial<BankTransaction>[]
   const result = await parseStringPromise(xmlContent);
   const entries = result?.Document?.BkToCstmrStmt?.[0]?.Stmt?.[0]?.Ntry || [];
 
-  return entries.map((entry: any) => ({
-    transaction_date: entry.ValDt?.[0]?.Dt?.[0],
-    booking_date: entry.BookgDt?.[0]?.Dt?.[0],
-    amount: parseFloat(entry.Amt?.[0]?._ || 0),
-    currency: entry.Amt?.[0]?.$?.Ccy || 'EUR',
-    description: entry.AddtlNtryInf?.[0],
-    counterparty_name: entry.NtryDtls?.[0]?.TxDtls?.[0]?.RltdPties?.[0]?.Cdtr?.[0]?.Nm?.[0],
-    counterparty_iban: entry.NtryDtls?.[0]?.TxDtls?.[0]?.RltdPties?.[0]?.CdtrAcct?.[0]?.Id?.[0]?.IBAN?.[0],
-    reference: entry.NtryDtls?.[0]?.TxDtls?.[0]?.Refs?.[0]?.EndToEndId?.[0],
-  }));
+  return entries.map((entry: any) => {
+    const indicator = entry.CdtDbtInd?.[0];
+    const rawAmount = parseFloat(entry.Amt?.[0]?._ || 0);
+    const amount = indicator === 'DBIT' ? -Math.abs(rawAmount) : Math.abs(rawAmount);
+    const txDetails = entry.NtryDtls?.[0]?.TxDtls?.[0];
+    return {
+      transaction_date: entry.ValDt?.[0]?.Dt?.[0],
+      booking_date: entry.BookgDt?.[0]?.Dt?.[0],
+      amount,
+      currency: entry.Amt?.[0]?.$?.Ccy || 'EUR',
+      description: entry.AddtlNtryInf?.[0] || txDetails?.RmtInf?.[0]?.Ustrd?.[0],
+      counterparty_name: txDetails?.RltdPties?.[0]?.Cdtr?.[0]?.Nm?.[0] || txDetails?.RltdPties?.[0]?.Dbtr?.[0]?.Nm?.[0],
+      counterparty_iban: txDetails?.RltdPties?.[0]?.CdtrAcct?.[0]?.Id?.[0]?.IBAN?.[0] || txDetails?.RltdPties?.[0]?.DbtrAcct?.[0]?.Id?.[0]?.IBAN?.[0],
+      reference: txDetails?.Refs?.[0]?.EndToEndId?.[0],
+    };
+  });
+}
+
+function detectDelimiter(content: string): ';' | ',' {
+  const firstLine = content.split(/\r?\n/).find(line => line.trim()) || '';
+  return (firstLine.match(/;/g) || []).length >= (firstLine.match(/,/g) || []).length ? ';' : ',';
+}
+
+function parseCsvAmount(record: any): number {
+  const debit = record['Belastung in EUR'] || record.Belastung || record.Soll || record.Debit;
+  const credit = record['Gutschrift in EUR'] || record.Gutschrift || record.Haben || record.Credit;
+  if (debit && parseAmount(debit) !== 0) return -Math.abs(parseAmount(debit));
+  if (credit && parseAmount(credit) !== 0) return Math.abs(parseAmount(credit));
+  return parseAmount(record.Betrag || record.Amount || record.Umsatz || record['Betrag in EUR']);
 }
 
 function parseDate(dateStr: string): string | undefined {
@@ -356,15 +376,18 @@ function parseDate(dateStr: string): string | undefined {
 
 function parseAmount(amountStr: string): number {
   if (!amountStr) return 0;
+  const negativeByParens = /\(.+\)/.test(amountStr);
   
   // Handle German format: 1.234,56 -> 1234.56
   // Handle negative: (100,00) or -100,00
   const cleaned = amountStr
     .replace(/\./g, '') // Remove thousand separator
     .replace(/,/g, '.') // Convert decimal comma to dot
-    .replace(/[()]/g, '-'); // Convert parentheses to negative
+    .replace(/[()]/g, '')
+    .replace(/[^0-9.-]/g, '');
   
-  return parseFloat(cleaned) || 0;
+  const parsed = parseFloat(cleaned) || 0;
+  return negativeByParens ? -Math.abs(parsed) : parsed;
 }
 
 export default router;

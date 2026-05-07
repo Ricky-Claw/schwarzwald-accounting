@@ -71,17 +71,18 @@ export default function UploadPage() {
   const [invoiceType, setInvoiceType] = useState<'incoming' | 'outgoing'>('incoming');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [purposeNote, setPurposeNote] = useState('');
-  const [targetInfo, setTargetInfo] = useState<{ month?: string; date?: string; amount?: string; description?: string } | null>(null);
+  const [targetInfo, setTargetInfo] = useState<{ month?: string; transactionId?: string; date?: string; amount?: string; description?: string } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const month = params.get('month') || undefined;
+    const transactionId = params.get('transactionId') || undefined;
     const date = params.get('date') || undefined;
     const amount = params.get('amount') || undefined;
     const description = params.get('description') || undefined;
-    if (month || date || amount || description) {
-      setTargetInfo({ month, date, amount, description });
+    if (month || transactionId || date || amount || description) {
+      setTargetInfo({ month, transactionId, date, amount, description });
       if (description) setPurposeNote(description);
     }
     // Skip auth check for now - use hardcoded key
@@ -169,6 +170,9 @@ export default function UploadPage() {
       }
       if (purposeNote.trim()) {
         formData.append('purpose_note', purposeNote.trim());
+      }
+      if (targetInfo?.transactionId) {
+        formData.append('transaction_id', targetInfo.transactionId);
       }
 
       const progressInterval = setInterval(() => {

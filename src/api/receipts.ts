@@ -104,6 +104,91 @@ router.get('/categories/list', async (req, res) => {
 });
 
 // ============================================
+// POST /api/accounting/receipts/auto-match
+// Batch auto-matching für alle ungematchten
+// Muss vor /:id stehen.
+// ============================================
+router.post('/auto-match', async (req, res) => {
+  try {
+    const userId = (req as any).userId as string;
+    const tenantId = (req as any).tenantId as string | undefined;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const result = await autoMatchAllReceipts(userId, tenantId);
+
+    res.json({
+      success: true,
+      matched: result.matched,
+      unmatched: result.unmatched,
+    });
+  } catch (error) {
+    console.error('Error auto-matching:', error);
+    res.status(500).json({ error: 'Failed to auto-match' });
+  }
+});
+
+// ============================================
+// DASHBOARD & MONTHLY VIEWS
+// Müssen vor /:id stehen.
+// ============================================
+
+router.get('/dashboard/stats', async (req, res) => {
+  try {
+    const userId = (req as any).userId as string;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const stats = await getDashboardStats(userId, (req as any).tenantId);
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching dashboard:', error);
+    res.status(500).json({ error: 'Failed to fetch dashboard' });
+  }
+});
+
+router.get('/months/list', async (req, res) => {
+  try {
+    const userId = (req as any).userId as string;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const months = await getAllMonths(userId, (req as any).tenantId);
+    res.json({ months });
+  } catch (error) {
+    console.error('Error fetching months:', error);
+    res.status(500).json({ error: 'Failed to fetch months' });
+  }
+});
+
+router.get('/months/:year/:month', async (req, res) => {
+  try {
+    const userId = (req as any).userId as string;
+    const year = parseInt(req.params.year);
+    const month = parseInt(req.params.month);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const overview = await getMonthlyOverview(userId, year, month, (req as any).tenantId);
+    res.json(overview);
+  } catch (error) {
+    console.error('Error fetching month overview:', error);
+    res.status(500).json({ error: 'Failed to fetch month overview' });
+  }
+});
+
+router.get('/months/:year/:month/missing', async (req, res) => {
+  try {
+    const userId = (req as any).userId as string;
+    const year = parseInt(req.params.year);
+    const month = parseInt(req.params.month);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const missing = await findMissingReceipts(userId, year, month, (req as any).tenantId);
+    res.json({ year, month, count: missing.length, transactions: missing });
+  } catch (error) {
+    console.error('Error fetching missing receipts:', error);
+    res.status(500).json({ error: 'Failed to fetch missing receipts' });
+  }
+});
+
+// ============================================
 // GET /api/accounting/receipts/:id
 // ============================================
 router.get('/:id', async (req, res) => {
@@ -194,6 +279,7 @@ router.post('/', upload.single('file'), async (req, res) => {
     // Rechnungstyp aus Request (incoming=Ausgabe, outgoing=Einnahme)
     const invoiceType = req.body.invoice_type === 'outgoing' ? 'outgoing' : 'incoming';
     const manualCategory = req.body.category_id as string | undefined;
+    const requestedTransactionId = (req.body.transaction_id || req.body.transactionId || '').toString().trim() || undefined;
     const purposeNote = (req.body.purpose_note || req.body.note || '').toString().trim();
 
     // OCR processing - Kimi Vision bevorzugt, dann Azure Fallback
@@ -253,7 +339,10 @@ router.post('/', upload.single('file'), async (req, res) => {
     let matchedTransactionId: string | null = null;
     let matchConfidence = 0;
 
-    if (invoiceType === 'incoming' && ocrResult.success && ocrResult.total_amount && ocrResult.date) {
+    if (invoiceType === 'incoming' && requestedTransactionId) {
+      matchedTransactionId = requestedTransactionId;
+      matchConfidence = 1;
+    } else if (invoiceType === 'incoming' && ocrResult.success && ocrResult.total_amount && ocrResult.date) {
       const match = await findMatchingTransaction(userId, {
         amount: ocrResult.total_amount,
         date: ocrResult.date,
@@ -264,15 +353,6 @@ router.post('/', upload.single('file'), async (req, res) => {
         matchedTransactionId = match.transactionId || null;
         matchConfidence = match.confidence;
 
-        // Auto-match if high confidence
-        if (matchedTransactionId) {
-          await matchReceiptToTransaction(
-            '', // Will be updated after insert
-            matchedTransactionId,
-            userId,
-            tenantId
-          );
-        }
       }
     }
 
@@ -282,7 +362,7 @@ router.post('/', upload.single('file'), async (req, res) => {
     const { data: receipt, error: dbError } = await supabase
       .from('receipts')
       .insert({
-        // user_id removed - FK constraint dropped
+        user_id: userId,
         tenant_id: tenantId,
         merchant_name: ocrResult.merchant_name,
         receipt_date: ocrResult.date,
@@ -302,7 +382,7 @@ router.post('/', upload.single('file'), async (req, res) => {
           learned_rule_id: learnedRule?.rule.id,
         },
         ocr_status: ocrResult.success ? 'success' : 'error',
-        bank_transaction_id: matchedTransactionId,
+        bank_transaction_id: null,
         status: 'verified',
       })
       .select()
@@ -312,7 +392,14 @@ router.post('/', upload.single('file'), async (req, res) => {
 
     // If auto-matched, update the match with correct receipt ID
     if (matchedTransactionId) {
-      await matchReceiptToTransaction(receipt.id, matchedTransactionId, userId, tenantId);
+      const matched = await matchReceiptToTransaction(receipt.id, matchedTransactionId, userId, tenantId);
+      if (!matched && requestedTransactionId) {
+        return res.status(400).json({ error: 'Failed to match selected transaction' });
+      }
+      if (!matched) {
+        matchedTransactionId = null;
+        matchConfidence = 0;
+      }
     }
 
     res.status(201).json({
@@ -417,28 +504,6 @@ router.post('/:id/match', async (req, res) => {
 });
 
 // ============================================
-// POST /api/accounting/receipts/auto-match
-// Batch auto-matching für alle ungematchten
-// ============================================
-router.post('/auto-match', async (req, res) => {
-  try {
-    const userId = (req as any).userId as string;
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-
-    const result = await autoMatchAllReceipts(userId);
-
-    res.json({
-      success: true,
-      matched: result.matched,
-      unmatched: result.unmatched,
-    });
-  } catch (error) {
-    console.error('Error auto-matching:', error);
-    res.status(500).json({ error: 'Failed to auto-match' });
-  }
-});
-
-// ============================================
 // DELETE /api/accounting/receipts/:id
 // ============================================
 router.delete('/:id', async (req, res) => {
@@ -484,84 +549,6 @@ router.delete('/:id', async (req, res) => {
   } catch (error) {
     console.error('Error deleting receipt:', error);
     res.status(500).json({ error: 'Failed to delete receipt' });
-  }
-});
-
-// ============================================
-// DASHBOARD & MONTHLY VIEWS
-// ============================================
-
-// GET /api/accounting/dashboard
-router.get('/dashboard/stats', async (req, res) => {
-  try {
-    const userId = (req as any).userId as string;
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-
-    const stats = await getDashboardStats(userId, (req as any).tenantId);
-
-    res.json(stats);
-  } catch (error) {
-    console.error('Error fetching dashboard:', error);
-    res.status(500).json({ error: 'Failed to fetch dashboard' });
-  }
-});
-
-// GET /api/accounting/months
-// Liste aller Monate mit Status
-router.get('/months/list', async (req, res) => {
-  try {
-    const userId = (req as any).userId as string;
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-
-    const months = await getAllMonths(userId, (req as any).tenantId);
-
-    res.json({ months });
-  } catch (error) {
-    console.error('Error fetching months:', error);
-    res.status(500).json({ error: 'Failed to fetch months' });
-  }
-});
-
-// GET /api/accounting/months/:year/:month
-// Detaillierte Übersicht für einen Monat
-router.get('/months/:year/:month', async (req, res) => {
-  try {
-    const userId = (req as any).userId as string;
-    const year = parseInt(req.params.year);
-    const month = parseInt(req.params.month);
-
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-
-    const overview = await getMonthlyOverview(userId, year, month, (req as any).tenantId);
-
-    res.json(overview);
-  } catch (error) {
-    console.error('Error fetching month overview:', error);
-    res.status(500).json({ error: 'Failed to fetch month overview' });
-  }
-});
-
-// GET /api/accounting/months/:year/:month/missing
-// Fehlende Belege für einen Monat
-router.get('/months/:year/:month/missing', async (req, res) => {
-  try {
-    const userId = (req as any).userId as string;
-    const year = parseInt(req.params.year);
-    const month = parseInt(req.params.month);
-
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-
-    const missing = await findMissingReceipts(userId, year, month, (req as any).tenantId);
-
-    res.json({
-      year,
-      month,
-      count: missing.length,
-      transactions: missing,
-    });
-  } catch (error) {
-    console.error('Error fetching missing receipts:', error);
-    res.status(500).json({ error: 'Failed to fetch missing receipts' });
   }
 });
 
