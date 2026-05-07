@@ -42,6 +42,16 @@ interface ExportStatus {
   };
 }
 
+interface TransactionRow {
+  id: string;
+  transaction_date: string;
+  amount: number;
+  description?: string;
+  counterparty_name?: string;
+  matchingStatus: 'matched' | 'missing_receipt' | 'no_receipt_needed';
+  receipt?: { merchant_name?: string; file_name_display?: string };
+}
+
 export default function MonthDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -50,6 +60,7 @@ export default function MonthDetailPage() {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [exportStatus, setExportStatus] = useState<ExportStatus | null>(null);
   const [categories, setCategories] = useState<Array<{ id: string; name: string; skr04Code: string }>>([]);
+  const [transactions, setTransactions] = useState<TransactionRow[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
@@ -89,13 +100,16 @@ export default function MonthDetailPage() {
         `${apiUrl}/api/accounting/export/status/${year}/${parseInt(monthNum)}`,
         { headers }
       );
+      const overviewResponse = await fetch(`${apiUrl}/api/accounting/receipts/months/${year}/${parseInt(monthNum)}`, { headers });
       const categoriesResponse = await fetch(`${apiUrl}/api/accounting/receipts/categories/list`, { headers });
       
       const data = await response.json();
       const statusData = statusResponse.ok ? await statusResponse.json() : null;
+      const overviewData = overviewResponse.ok ? await overviewResponse.json() : null;
       const categoryData = categoriesResponse.ok ? await categoriesResponse.json() : null;
       setReceipts(data.receipts || []);
       setExportStatus(statusData);
+      setTransactions(overviewData?.transactions || []);
       setCategories([
         ...(categoryData?.incoming?.categories || []),
         ...(categoryData?.outgoing?.categories || []),
@@ -330,6 +344,44 @@ export default function MonthDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Booking status table */}
+        <div className="finance-card border border-slate-200 mb-8 overflow-hidden">
+          <div className="p-4 border-b border-slate-200 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="font-semibold text-slate-900 flex items-center gap-2">
+                <ClipboardCheck className="w-5 h-5 text-emerald-700" /> Buchungs-Tabelle
+              </h2>
+              <p className="text-sm text-slate-500">Grün = Beleg vorhanden, Rot = Beleg fehlt, Grau = kein Beleg nötig.</p>
+            </div>
+          </div>
+          {transactions.length === 0 ? (
+            <div className="p-8 text-center text-slate-500">Noch keine Bankbuchungen importiert. Kontoauszug als CSV/CAMT hochladen.</div>
+          ) : (
+            <div className="divide-y divide-slate-200">
+              {transactions.map((tx) => {
+                const isMissing = tx.matchingStatus === 'missing_receipt';
+                const isMatched = tx.matchingStatus === 'matched';
+                return (
+                  <div key={tx.id} className={`p-4 grid gap-3 md:grid-cols-[120px_1fr_120px_160px] md:items-center ${isMatched ? 'bg-emerald-50/60' : isMissing ? 'bg-red-50/70' : 'bg-slate-50/70'}`}>
+                    <div className="text-sm text-slate-600">{tx.transaction_date}</div>
+                    <div>
+                      <div className="font-medium text-slate-950">{tx.description || tx.counterparty_name || 'Unbekannte Buchung'}</div>
+                      {tx.receipt?.merchant_name && <div className="text-xs text-emerald-700">Beleg: {tx.receipt.merchant_name}</div>}
+                    </div>
+                    <div className={`font-semibold ${tx.amount < 0 ? 'text-slate-950' : 'text-emerald-700'}`}>{Math.abs(tx.amount).toFixed(2)} €</div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`finance-badge ${isMatched ? 'bg-emerald-100 text-emerald-800' : isMissing ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-600'}`}>{isMatched ? 'GRÜN · Beleg da' : isMissing ? 'ROT · Beleg fehlt' : 'GRAU · kein Beleg nötig'}</span>
+                      {isMissing && (
+                        <Link href={`/upload?month=${month}&transactionId=${tx.id}&date=${tx.transaction_date}&amount=${Math.abs(tx.amount)}&description=${encodeURIComponent(tx.description || tx.counterparty_name || '')}`} className="text-xs font-semibold text-red-700 hover:text-red-900">hochladen</Link>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* Receipts List */}
         <div className="finance-card border border-slate-200">

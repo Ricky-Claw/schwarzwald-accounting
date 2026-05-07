@@ -4,11 +4,14 @@
 
 import { Router } from 'express';
 import { createClient } from '@supabase/supabase-js';
+import multer from 'multer';
 import { parse } from 'csv-parse/sync';
 import { parseStringPromise } from 'xml2js';
 import type { BankTransaction, UploadStatementRequest } from '../types/index.js';
+import { autoMatchAllReceipts } from '../services/matching.service.js';
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 // Supabase Client
 const supabase = createClient(
@@ -79,18 +82,33 @@ router.get('/:id', async (req, res) => {
 // POST /api/accounting/statements
 // Upload and process bank statement
 // ============================================
-router.post('/', async (req, res) => {
+router.post('/', upload.single('file'), async (req, res) => {
   try {
     const userId = (req as any).userId as string;
     const tenantId = (req as any).tenantId as string | undefined;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { account_name, account_iban, statement_date } = req.body as UploadStatementRequest;
-    
-    // File upload would be handled by multer middleware
-    // For now, assume file is already uploaded to storage
-    const filePath = req.body.file_path;
-    const fileType = detectFileType(req.body.file_name || '');
+    const uploadedFile = req.file;
+    const originalName = uploadedFile?.originalname || req.body.file_name || 'kontoauszug.csv';
+    const fileType = detectFileType(originalName);
+
+    if (!uploadedFile && !req.body.file_path) {
+      return res.status(400).json({ error: 'file required' });
+    }
+
+    if (fileType === 'pdf') {
+      return res.status(400).json({ error: 'PDF_IMPORT_NOT_SUPPORTED', message: 'Bitte CSV oder CAMT XML hochladen. PDF-Kontoauszüge werden noch nicht ausgelesen.' });
+    }
+
+    let filePath = req.body.file_path;
+    if (uploadedFile) {
+      filePath = `statements/${tenantId || userId}/${Date.now()}_${sanitizeFileName(originalName)}`;
+      const { error: uploadError } = await supabase.storage.from('statements').upload(filePath, uploadedFile.buffer, {
+        contentType: uploadedFile.mimetype || 'application/octet-stream',
+      });
+      if (uploadError) throw uploadError;
+    }
 
     // Create statement record
     const { data: statement, error } = await supabase
@@ -110,10 +128,9 @@ router.post('/', async (req, res) => {
 
     if (error) throw error;
 
-    // Start async processing
-    processStatementAsync(statement.id, filePath, fileType, userId, tenantId);
+    const processing = await processStatement(statement.id, filePath, fileType, userId, tenantId);
 
-    res.status(201).json({ statement });
+    res.status(201).json({ statement: { ...statement, ...processing.statementUpdate }, transactions: processing.transactions, autoMatch: processing.autoMatch });
   } catch (error) {
     console.error('Error uploading statement:', error);
     res.status(500).json({ error: 'Failed to upload statement' });
@@ -193,7 +210,7 @@ router.patch('/transactions/:id', async (req, res) => {
 // PROCESSING FUNCTIONS
 // ============================================
 
-async function processStatementAsync(
+async function processStatement(
   statementId: string,
   filePath: string,
   fileType: 'pdf' | 'csv' | 'camt',
@@ -255,6 +272,13 @@ async function processStatementAsync(
       })
       .eq('id', statementId);
 
+    const autoMatch = await autoMatchAllReceipts(userId, tenantId);
+    return {
+      transactions,
+      autoMatch,
+      statementUpdate: { status: 'processed', transaction_count: transactions.length, total_amount: totalAmount },
+    };
+
   } catch (error) {
     console.error('Error processing statement:', error);
     
@@ -265,6 +289,7 @@ async function processStatementAsync(
         error_message: (error as Error).message,
       })
       .eq('id', statementId);
+    throw error;
   }
 }
 
@@ -273,6 +298,10 @@ function detectFileType(filename: string): 'pdf' | 'csv' | 'camt' {
   if (ext === 'csv') return 'csv';
   if (ext === 'xml' || filename.toLowerCase().includes('camt')) return 'camt';
   return 'pdf';
+}
+
+function sanitizeFileName(filename: string): string {
+  return filename.replace(/[^a-zA-Z0-9._-]+/g, '_').slice(0, 120);
 }
 
 function parseCSV(content: string): Partial<BankTransaction>[] {

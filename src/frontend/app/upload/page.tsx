@@ -20,7 +20,10 @@ interface UploadingFile {
   progress: number;
   status: 'uploading' | 'processing' | 'matched' | 'error';
   result?: {
+    kind?: 'receipt' | 'statement';
     receiptId?: string;
+    transactionCount?: number;
+    autoMatched?: number;
     merchant?: string;
     date?: string;
     amount?: number;
@@ -129,6 +132,37 @@ export default function UploadPage() {
       
       const formData = new FormData();
       formData.append('file', fileObj.file);
+
+      const lowerName = fileObj.file.name.toLowerCase();
+      const isStatement = lowerName.endsWith('.csv') || lowerName.endsWith('.xml') || lowerName.includes('camt');
+
+      if (isStatement) {
+        formData.append('account_name', 'Geschäftskonto');
+        formData.append('statement_date', new Date().toISOString().split('T')[0]);
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://lanista-backend.onrender.com';
+        const headers: Record<string, string> = { 'x-api-key': apiKey };
+        if (tenantId) headers['x-tenant-id'] = tenantId;
+        const response = await fetch(`${apiUrl}/api/accounting/statements`, { method: 'POST', headers, body: formData });
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Statement upload failed: ${response.status} - ${errorText}`);
+        }
+        const data = await response.json();
+        setFiles((prev) => prev.map((f) => f.id === fileObj.id ? {
+          ...f,
+          progress: 100,
+          status: 'matched',
+          result: {
+            kind: 'statement',
+            fileName: fileObj.file.name,
+            transactionCount: data.transactions?.length || data.statement?.transaction_count || 0,
+            autoMatched: data.autoMatch?.matched || 0,
+            matched: true,
+          },
+        } : f));
+        return;
+      }
+
       formData.append('invoice_type', invoiceType);
       if (selectedCategory) {
         formData.append('category_id', selectedCategory);
@@ -180,6 +214,7 @@ export default function UploadPage() {
                 progress: 100,
                 status: data.autoMatched ? 'matched' : 'processing',
                 result: {
+                  kind: 'receipt',
                   receiptId: data.receipt?.id,
                   merchant: data.receipt?.merchant_name,
                   date: data.receipt?.receipt_date,
@@ -564,6 +599,15 @@ export default function UploadPage() {
                           {/* Result */}
                           {file.result && (
                             <div className="mt-2 space-y-1">
+                              {file.result.kind === 'statement' && (
+                                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+                                  <div className="font-semibold">Kontoauszug verarbeitet</div>
+                                  <div>{file.result.transactionCount || 0} Buchungen importiert · {file.result.autoMatched || 0} Belege automatisch zugeordnet</div>
+                                  <Link href="/dashboard" className="mt-2 inline-flex text-xs font-semibold text-emerald-800 hover:text-emerald-950">Zur Monatsübersicht →</Link>
+                                </div>
+                              )}
+                              {file.result.kind !== 'statement' && (
+                              <>
                               <div className="flex items-center gap-2 text-sm flex-wrap">
                                 {file.result.merchant && (
                                   <span className="text-slate-700 font-medium">{file.result.merchant}</span>
@@ -641,6 +685,8 @@ export default function UploadPage() {
                                   {file.result.remembered && <p className="mt-2 font-medium">Für Zukunft gemerkt.</p>}
                                 </div>
                               ) : null}
+                              </>
+                              )}
                             </div>
                           )}
 

@@ -177,13 +177,23 @@ export async function matchReceiptToTransaction(
 export async function autoMatchAllReceipts(userId: string): Promise<{
   matched: number;
   unmatched: number;
+}>;
+export async function autoMatchAllReceipts(userId: string, tenantId: string | undefined): Promise<{
+  matched: number;
+  unmatched: number;
+}>;
+export async function autoMatchAllReceipts(userId: string, tenantId?: string): Promise<{
+  matched: number;
+  unmatched: number;
 }> {
   // Hole alle ungematchten Belege
-  const { data: receipts, error } = await supabase
+  let receiptsQuery = supabase
     .from('receipts')
     .select('*')
     .is('bank_transaction_id', null)
     .eq('status', 'verified');
+  receiptsQuery = tenantId ? receiptsQuery.eq('tenant_id', tenantId) : receiptsQuery.eq('user_id', userId);
+  const { data: receipts, error } = await receiptsQuery;
 
   if (error || !receipts) return { matched: 0, unmatched: 0 };
 
@@ -196,13 +206,14 @@ export async function autoMatchAllReceipts(userId: string): Promise<{
       amount: receipt.total_amount,
       date: receipt.receipt_date,
       merchantName: receipt.merchant_name || undefined,
-    });
+    }, tenantId);
 
     if (match.success && match.confidence > 0.8) {
       const success = await matchReceiptToTransaction(
         receipt.id,
         match.transactionId!,
-        userId
+        userId,
+        tenantId
       );
       if (success) matched++;
     }
